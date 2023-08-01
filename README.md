@@ -34,7 +34,7 @@ The ArcGIS Maps is compatible with applications:
 #### Android
 ```bash
 buildscript {
-    ext.kotlin_version = '1.7.20'
+    ext.kotlin_version = '1.7.x'
     repositories {
         google()
         mavenCentral()
