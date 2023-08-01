@@ -1,0 +1,5 @@
+
+enum AGMLDownloadPortalItemManagerStatusEnum {
+  downloading,
+  prepared
+}
