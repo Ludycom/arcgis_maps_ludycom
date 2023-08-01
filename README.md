@@ -65,30 +65,30 @@ Not available
 ### Examples
 
 #### Basic map
-![App Screenshot](example/demo_assets/basic_map.jpg)
+![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/basic_map.jpg)
 
 #### Load feature tablet service
-![App Screenshot](example/demo_assets/load_feature_tablet.jpg)
+![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/load_feature_tablet.jpg)
 
 #### Load local files
 ##### GeoDatabase
-![App Screenshot](example/demo_assets/load_geodatabase.jpg)
+![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/load_geodatabase.jpg)
 ##### GeoPackage
-![App Screenshot](example/demo_assets/load_geopackage.jpg)
+![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/load_geodatabase.jpg)
 ##### ShapeFile
-![App Screenshot](example/demo_assets/load_shapefile.jpg)
+![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/load_shapefile.jpg)
 
 #### Load portal feature layer
 ![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
 
 #### Select features in feature layer
-![App Screenshot](example/demo_assets/selection_0.jpg)
-![App Screenshot](example/demo_assets/selection_1.jpg)
+![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/selection_0.jpg)
+![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/selection_1.jpg)
 
 #### Manage Map
-![App Screenshot](example/demo_assets/manage_map.gif)
+![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/manage_map.gif)
 
 #### Download from portal
-![App Screenshot](example/demo_assets/download_portalitem_0.jpg)
-![App Screenshot](example/demo_assets/download_portalitem_1.jpg)
-![App Screenshot](example/demo_assets/download_portalitem_2.jpg)
+![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/download_portalitem_0.jpg)
+![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/download_portalitem_1.jpg)
+![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/download_portalitem_2.jpg)
