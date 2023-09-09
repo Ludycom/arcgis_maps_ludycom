@@ -8,7 +8,7 @@ import 'package:arcgis_maps/entities/features/agml_local_shapefile.dart';
 import 'package:arcgis_maps/entities/features/agml_local_geopackage.dart';
 import 'package:arcgis_maps/entities/features/agml_local_geodatabase.dart';
 import 'package:arcgis_maps/entities/features/agml_local_feature_layer.dart';
-import 'package:arcgis_maps/entities/features/agml_service_feature_layer.dart';
+import 'package:arcgis_maps/entities/features/agml_feature_service_layer.dart';
 import 'package:arcgis_maps/entities/features/agml_arcgis_online_portal_item.dart';
 import 'package:arcgis_maps/entities/features/abstract_agml_feature_layer.dart';
 
@@ -25,10 +25,10 @@ class AGMLMapController {
   final StreamController<List<dynamic>> _selecetedLayerStreamController = StreamController();
   StreamController<List<dynamic>> get selecetedLayerStreamController => _selecetedLayerStreamController;
 
-  late List<AGMLServiceFeatureLayer> _mapServiceLayers;
-  List<AGMLServiceFeatureLayer> get mapServiceLayers => _mapServiceLayers;
-  final StreamController<List<AGMLServiceFeatureLayer>> _onChangedMapServiceLayersStreamController = StreamController();
-  StreamController<List<AGMLServiceFeatureLayer>> get onChangedMapServiceLayersStreamController => _onChangedMapServiceLayersStreamController;
+  late List<AGMLFeatureServiceLayer> _mapServiceLayers;
+  List<AGMLFeatureServiceLayer> get mapServiceLayers => _mapServiceLayers;
+  final StreamController<List<AGMLFeatureServiceLayer>> _onChangedMapServiceLayersStreamController = StreamController();
+  StreamController<List<AGMLFeatureServiceLayer>> get onChangedMapServiceLayersStreamController => _onChangedMapServiceLayersStreamController;
 
   late List<AGMLLocalFeatureLayer> _mapLocalLayers;
   List<AGMLLocalFeatureLayer> get mapLocalLayers => _mapLocalLayers;
@@ -53,11 +53,11 @@ class AGMLMapController {
 
 
   void onLoadServiceFeatureChannelResponse(
-    AGMLServiceFeatureLayer layer, 
+    AGMLFeatureServiceLayer layer, 
     String response
   ) {
     if(response != AGMLChannelStatusResponseEnum.failure.name) {
-      _mapServiceLayers.add(AGMLServiceFeatureLayer(
+      _mapServiceLayers.add(AGMLFeatureServiceLayer(
         id: response,
         url: layer.url,
         viewPoint: layer.viewPoint
@@ -109,7 +109,7 @@ class AGMLMapController {
 
   //? From Feature tablet service or Esri Portal service
 
-  Future<void> loadServiceFeatureTable(AGMLServiceFeatureLayer arcGISMapServiceFeatureLayer) async {
+  Future<void> loadServiceFeatureTable(AGMLFeatureServiceLayer arcGISMapServiceFeatureLayer) async {
     const method = '/loadServiceFeatureTable';
 
     try {
@@ -126,7 +126,7 @@ class AGMLMapController {
     try {
       final channelResponse = await _channel.invokeMethod(method, agmlPortalItem.toJson()) as String;
       onLoadServiceFeatureChannelResponse(
-        AGMLServiceFeatureLayer(
+        AGMLFeatureServiceLayer(
           url: agmlPortalItem.url,
           viewPoint: agmlPortalItem.viewPoint
         ),
@@ -143,7 +143,7 @@ class AGMLMapController {
     try {
       final channelResponse = await _channel.invokeMethod(method, agmlArcGISOnlinePortalItem.toMap()) as String;
       onLoadServiceFeatureChannelResponse(
-        AGMLServiceFeatureLayer(
+        AGMLFeatureServiceLayer(
           url: 'https://www.arcgis.com/apps/mapviewer/index.html?layers=${agmlArcGISOnlinePortalItem.itemID}',
           viewPoint: agmlArcGISOnlinePortalItem.viewPoint
         ),

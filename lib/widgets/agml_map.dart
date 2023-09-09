@@ -11,7 +11,7 @@ import 'package:arcgis_maps/entities/agml_params.dart';
 import 'package:arcgis_maps/utils/agml_controller.dart';
 
 import 'package:arcgis_maps/entities/features/agml_local_feature_layer.dart';
-import 'package:arcgis_maps/entities/features/agml_service_feature_layer.dart';
+import 'package:arcgis_maps/entities/features/agml_feature_service_layer.dart';
 
 
 
@@ -20,7 +20,7 @@ class AGMLMap extends StatefulWidget {
   final AGMLCreationParams creationParams;
   final Function(AGMLMapController controller)? onMapCreated;
   final Function(List<dynamic> attributesList)? onLayerSelected;
-  final Function(List<AGMLServiceFeatureLayer> layers)? onChangeMapServiceLayers;
+  final Function(List<AGMLFeatureServiceLayer> layers)? onChangeMapServiceLayers;
   final Function(List<AGMLLocalFeatureLayer> layers)? onChangeMapLocalLayers;
 
   const AGMLMap({

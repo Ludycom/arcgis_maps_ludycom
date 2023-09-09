@@ -3,10 +3,20 @@ package com.ludycom.arcgis_maps
 import android.content.Context
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.coroutineScope
+import com.arcgismaps.data.ServiceFeatureTable
+import com.arcgismaps.geometry.Envelope
+import com.arcgismaps.geometry.Point
+import com.arcgismaps.geometry.SpatialReference
+import com.arcgismaps.mapping.ArcGISMap
+import com.arcgismaps.mapping.BasemapStyle
 import com.arcgismaps.mapping.PortalItem
+import com.arcgismaps.mapping.view.Graphic
+import com.arcgismaps.mapping.view.ScreenCoordinate
+import com.arcgismaps.tasks.geodatabase.GeodatabaseSyncTask
 import com.google.gson.Gson
 import com.ludycom.arcgis_maps.entities.AGMLDownloadPortalItem
 import com.ludycom.arcgis_maps.entities.AGMLPortalItem
+import com.ludycom.arcgis_maps.entities.AGMLServiceFeature
 import com.ludycom.arcgis_maps.utils.AGMLDownloadStatusEnum
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -29,6 +39,7 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private var context: Context? = null
   private var lifecycle: Lifecycle? = null
   private lateinit var channel : MethodChannel
+  private val downloadArea: Graphic = Graphic()
 
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "arcgis_maps")
@@ -110,6 +121,76 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
         }
       }
+      "/downloadClipPortalItemGeoDatabase" -> {
+        val arguments = call.arguments as Map<*, *>
+        val arcGISMapFeatureService = Gson().fromJson(JSONObject(arguments).toString(), AGMLServiceFeature::class.java)
+
+        val geoDatabasesSyncTask = GeodatabaseSyncTask(arcGISMapFeatureService.url)
+
+
+        lifecycle!!.coroutineScope.launch {
+          geoDatabasesSyncTask.load().onSuccess {
+//            val fullExtent = geoDatabasesSyncTask.featureServiceInfo?.fullExtent;
+            val minScreenPoint = ScreenCoordinate(200.0, 200.0)
+            if(
+              geoDatabasesSyncTask.featureServiceInfo?.fullExtent?.width != null &&
+              geoDatabasesSyncTask.featureServiceInfo?.fullExtent?.height != null
+            ) {
+              val maxScreenPoint = ScreenCoordinate(
+                geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.width - 200.0,
+                geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.height - 200.0
+              )
+
+              // convert screen points to map points
+              val minPoint = Point(minScreenPoint.x, minScreenPoint.y, SpatialReference.webMercator())
+              val maxPoint = Point(maxScreenPoint.x, maxScreenPoint.y, SpatialReference.webMercator())
+              // use the points to define and return an envelope
+//              if (minPoint != null && maxPoint != null) {
+              val envelope = Envelope(minPoint, maxPoint)
+              downloadArea.geometry = envelope
+//              }
+              val defaultParameters = geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters(
+                downloadArea.geometry!!.extent
+              ).getOrElse { err ->
+                result.success(err.message)
+
+                return@launch
+              }.apply {
+                layerOptions.removeIf { layerOptions ->
+                  layerOptions.layerId != 0L
+                }
+              }
+              defaultParameters.returnAttachments = false
+
+
+              geoDatabasesSyncTask.createGenerateGeodatabaseJob(
+                defaultParameters,
+                context!!.getExternalFilesDir(null)!!.path+"test.geodatabase"
+              ).run {
+                start()
+                val geodatabase = result().getOrElse { err ->
+                  result.success(err.message)
+                  return@launch
+                }
+                geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
+
+              }
+            }
+
+//            if(fullExtent != null) {
+//
+//            }
+
+
+
+          }.onFailure { err ->
+            result.success(err.message)
+
+          }
+
+
+        }
+      }
     }
   }
 
@@ -138,3 +219,55 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   }
 
 }
+
+
+
+//        val aGMLDownloadPortalItem = AGMLDownloadPortalItem(
+//          portalItem = arcGISMapServicePortalItem,
+//          pathLocation = ""
+//        )
+
+//        val portalItem = PortalItem(aGMLDownloadPortalItem.portalItem.url)
+//        val offlineMapTask  = OfflineMapTask(portalItem)
+
+//        val envelope = Envelope(
+//          -13049000.0, 3861000.0, -13048000.0, 3861500.0,
+//          spatialReference = SpatialReference.webMercator()
+//        )
+
+
+
+//          offlineMapTask.createDefaultGenerateOfflineMapParameters(
+//            envelope,
+//            5000.0,
+//            10000.0
+//          ).onSuccess { offlineParams ->
+//            val folderPath = context!!.getExternalFilesDir(null)?.absolutePath.toString()+File.separator+"Portal Map Task"
+//
+//            val provisionFolder = File(folderPath)
+//            if (!provisionFolder.exists()) {
+//              provisionFolder.mkdirs()
+//            }
+//
+//            offlineParams.includeBasemap = true
+//            val offlineMapJob = offlineMapTask.createGenerateOfflineMapJob(
+//              offlineParams,
+//              provisionFolder.path
+//            )
+//
+//            offlineMapJob.start()
+//            offlineMapJob.result().onSuccess { offlineMapResult ->
+//              if (offlineMapResult.offlineMap.utilityNetworks.size > 0) {
+//                val utilityNetwork = offlineMapResult.offlineMap.utilityNetworks[0]
+//                utilityNetwork.load().onSuccess {
+//                  result.success("Todo bien")
+//                }.onFailure { err ->
+//                  println(err)
+//                }
+//              }
+//            }.onFailure { err ->
+//              println(err)
+//            }
+//          }.onFailure { err ->
+//            println(err)
+//          }

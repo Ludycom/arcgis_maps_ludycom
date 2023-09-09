@@ -1,3 +1,4 @@
+import 'package:arcgis_maps_example/pages/clip_geometry_.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -54,6 +55,7 @@ class MyApp extends StatelessWidget {
         PageRoutesEnum.load_local_files.path: (context) => const LoadLocalFilesPage(),
         PageRoutesEnum.select_features_in_feature_layer.path: (context) => const SelectFeaturesInFeatureLayerPage(),
         PageRoutesEnum.manage_map.path: (context) => const ManageMapPage(),
+        PageRoutesEnum.clip_geometry.path: (context) => const ClipGeometryPage(),
       },
     );
   }

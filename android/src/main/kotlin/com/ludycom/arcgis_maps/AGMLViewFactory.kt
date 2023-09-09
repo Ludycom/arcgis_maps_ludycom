@@ -80,7 +80,12 @@ internal class AGMLMapView(
 
         ArcGISEnvironment.apiKey = ApiKey.create(params.apiKey)
 
-        mapView.map = ArcGISMap(BasemapStyle.ArcGISTopographic)
+        if(params.basemapStyle.getBasemapStyle() != null) {
+            mapView.map = ArcGISMap()
+        } else {
+            mapView.map = ArcGISMap(params.basemapStyle.getBasemapStyle()!!)
+        }
+
         mapView.selectionProperties.color = Color.red
 
         MethodChannel(messenger, "$channel:mapStatus").invokeMethod("/mapIsReady", "")

@@ -7,7 +7,7 @@ import 'package:arcgis_maps/widgets/agml_map.dart';
 import 'package:arcgis_maps/utils/agml_controller.dart';
 import 'package:arcgis_maps/entities/agml_params.dart';
 import 'package:arcgis_maps/entities/agml_view_point.dart';
-import 'package:arcgis_maps/entities/features/agml_service_feature_layer.dart';
+import 'package:arcgis_maps/entities/features/agml_feature_service_layer.dart';
 
 
 
@@ -56,7 +56,7 @@ class _LoadFeatureTabletServicePageState extends State<LoadFeatureTabletServiceP
                     ),
                     onPressed: () {
                       mapController.loadServiceFeatureTable(
-                        AGMLServiceFeatureLayer(
+                        AGMLFeatureServiceLayer(
                           url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/NapervilleShelters/FeatureServer/0',
                           viewPoint: AGMLViewPoint(
                             latitude: 41.70, 

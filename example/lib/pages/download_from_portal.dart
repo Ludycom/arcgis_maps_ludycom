@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 
 
 import 'package:arcgis_maps/entities/features/agml_portal_item.dart';
+import 'package:arcgis_maps/entities/features/agml_feature_service.dart';
 import 'package:arcgis_maps/entities/agml_download_portal_item.dart';
 import 'package:arcgis_maps/utils/agml_download_portal_item_manager.dart';
 import 'package:arcgis_maps/utils/enums/agml_download_portal_item_status_enum.dart';
@@ -78,6 +79,15 @@ class _DownloadFormPortalPageState extends State<DownloadFormPortalPage> {
                 });
               },
               child: const Text('Check if have Portal Layers')
+            ),
+            OutlinedButton(
+              onPressed: () async {
+                final checkIfHaveFiles = await agmlDownloadPortalItemManager.downloadClipPortalItemGeoDatabase(agmlFeatureService);
+                setState(() {
+                  // checkPortalItemList = checkIfHaveFiles;
+                });
+              },
+              child: const Text('download Clip Portal Item GeoDatabase')
             ),
             Container(
               margin: const EdgeInsets.symmetric(vertical: 10),
@@ -281,3 +291,8 @@ final agmlPortalItemList = [
   AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=15a7cbd3af1e47cfa5d2c6b93dc44fc2'),
   AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=68ec42517cdd439e81b036210483e8e7')
 ];
+
+final agmlFeatureService = AGMLFeatureService(
+  url: 'https://services2.arcgis.com/ZQgQTuoyBrtmoGdP/arcgis/rest/services/Mobile_Data_Collection_WFL1/FeatureServer'
+  // url: 'https://pliga-server.cvc.gov.co/arcgis/rest/services/PLIGA/HC_HIDROCLIMATOLOGIA/FeatureServer'
+);

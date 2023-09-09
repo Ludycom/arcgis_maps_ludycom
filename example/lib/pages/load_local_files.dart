@@ -42,7 +42,8 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
         children: [
           AGMLMap(
             creationParams: AGMLCreationParams(
-              apiKey: dotenv.env['API_KEY']
+              apiKey: dotenv.env['API_KEY'],
+              basemapStyle: AGMLBasemapStyleEnum.arcGISTopographic
             ),
             onMapCreated: (controller) => mapController = controller,
           ),
@@ -71,6 +72,27 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
                     },
                     child: const Text(
                       'Load Geodatabase',
+                      style: TextStyle(color: Colors.white)
+                    )
+                  ),
+                  TextButton(
+                    style: const ButtonStyle(
+                      backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
+                    ),
+                    onPressed: () {
+                      mapController.loadGeoDatabaseFeatureLayer(
+                        AGMLLocalGeodatabase(
+                          path: '/storage/emulated/0/Android/data/com.ludycom.arcgis_maps_example/filestest.geodatabase',
+                          viewPoint: AGMLViewPoint(
+                            latitude: 34.0772, 
+                            longitude: -118.7989,
+                            scale: 600000.0
+                          )
+                        ) 
+                      );
+                    },
+                    child: const Text(
+                      'Load Geodatabase From FeatureServer',
                       style: TextStyle(color: Colors.white)
                     )
                   ),
@@ -116,6 +138,7 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
                       style: TextStyle(color: Colors.white)
                     )
                   ),
+                  
                   TextButton(
                     style: const ButtonStyle(
                       backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)

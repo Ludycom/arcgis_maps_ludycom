@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:arcgis_maps/entities/features/agml_feature_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
@@ -103,6 +104,23 @@ class AGMLDownloadPortalItemManager {
     }
 
     return downloadPortalItem;
+  }
+
+  Future<AGMLDownloadPortalItem> downloadClipPortalItemGeoDatabase(AGMLFeatureService featureService) async {
+    const method = '/downloadClipPortalItemGeoDatabase';
+    late final AGMLDownloadPortalItem downloadPortalItem;
+
+    try {
+      // final channelResponse = await 
+      _channel.invokeMethod(method, featureService.toJson()) as String;
+      // downloadPortalItem = AGMLDownloadPortalItem.fromJson(jsonDecode(channelResponse));
+    } catch (e) {
+      if (kDebugMode) print(e);
+      
+    }
+
+    // return downloadPortalItem;
+    return AGMLDownloadPortalItem(portalItem: AGMLPortalItem(url: 'url'));
   }
 
 

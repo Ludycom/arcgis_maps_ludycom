@@ -8,7 +8,8 @@ enum PageRoutesEnum {
   download_form_portal,
   load_local_files,
   select_features_in_feature_layer,
-  manage_map
+  manage_map,
+  clip_geometry
 }
 
 extension PageRoutesEnumExtension on PageRoutesEnum {
@@ -22,6 +23,7 @@ extension PageRoutesEnumExtension on PageRoutesEnum {
       case PageRoutesEnum.load_local_files: return "/load_loca_files";
       case PageRoutesEnum.select_features_in_feature_layer: return "/select_features_in_feature_layer";
       case PageRoutesEnum.manage_map: return "/manage_map";
+      case PageRoutesEnum.clip_geometry: return "/clip_geometry";
     }
   }
 }

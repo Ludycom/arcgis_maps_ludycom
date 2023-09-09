@@ -26,7 +26,7 @@ import com.google.gson.Gson
 import com.ludycom.arcgis_maps.entities.AGMLArcGISOnlinePortalItem
 import com.ludycom.arcgis_maps.entities.AGMLLocalFeatureLayer
 import com.ludycom.arcgis_maps.entities.AGMLPortalItem
-import com.ludycom.arcgis_maps.entities.AGMLServiceFeatureLayer
+import com.ludycom.arcgis_maps.entities.AGMLFeatureServiceLayer
 import com.ludycom.arcgis_maps.entities.AGMLViewPoint
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -165,15 +165,15 @@ class AGMLViewMethodCall(
         when (call.method) {
             "/loadServiceFeatureTable" -> {
                 val arguments = call.arguments as Map<*, *>
-                val arcGISMapServiceFeatureTable = Gson().fromJson(JSONObject(arguments).toString(), AGMLServiceFeatureLayer::class.java)
+                val arcGISMapFeatureServiceTable = Gson().fromJson(JSONObject(arguments).toString(), AGMLFeatureServiceLayer::class.java)
 
-                val serviceFeatureTable = ServiceFeatureTable(arcGISMapServiceFeatureTable.url)
+                val serviceFeatureTable = ServiceFeatureTable(arcGISMapFeatureServiceTable.url)
 
                 lifecycle.coroutineScope.launch {
                     withTimeoutOrNull(5000.milliseconds) {
                         serviceFeatureTable.load().onSuccess {
                             val featureLayer = FeatureLayer.createWithFeatureTable(serviceFeatureTable)
-                            setFeatureLayer(featureLayer, arcGISMapServiceFeatureTable.viewPoint)
+                            setFeatureLayer(featureLayer, arcGISMapFeatureServiceTable.viewPoint)
                             result.success(featureLayer.id)
                         }.onFailure {
                             result.success("failure");

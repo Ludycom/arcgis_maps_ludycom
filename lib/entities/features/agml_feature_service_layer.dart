@@ -3,11 +3,11 @@ import 'package:arcgis_maps/entities/features/abstract_agml_feature_layer.dart';
 
 
 
-class AGMLServiceFeatureLayer extends AbstractAGMLFeatureLayer {
+class AGMLFeatureServiceLayer extends AbstractAGMLFeatureLayer {
 
   final String url;
 
-  AGMLServiceFeatureLayer({
+  AGMLFeatureServiceLayer({
     super.id,
     required this.url,
     super.viewPoint
@@ -19,11 +19,11 @@ class AGMLServiceFeatureLayer extends AbstractAGMLFeatureLayer {
     "viewPoint": viewPoint?.toJson()
   };
 
-  AGMLServiceFeatureLayer copyWith({
+  AGMLFeatureServiceLayer copyWith({
     String? id,
     String? url,
     AGMLViewPoint? viewPoint
-  }) => AGMLServiceFeatureLayer(
+  }) => AGMLFeatureServiceLayer(
     id: id ?? this.id,
     url: url ?? this.url,
     viewPoint: viewPoint ?? viewPoint
