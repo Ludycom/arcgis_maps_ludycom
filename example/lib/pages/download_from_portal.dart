@@ -293,6 +293,6 @@ final agmlPortalItemList = [
 ];
 
 final agmlFeatureService = AGMLFeatureService(
-  url: 'https://services2.arcgis.com/ZQgQTuoyBrtmoGdP/arcgis/rest/services/Mobile_Data_Collection_WFL1/FeatureServer'
-  // url: 'https://pliga-server.cvc.gov.co/arcgis/rest/services/PLIGA/HC_HIDROCLIMATOLOGIA/FeatureServer'
+  // url: 'https://services2.arcgis.com/ZQgQTuoyBrtmoGdP/arcgis/rest/services/Mobile_Data_Collection_WFL1/FeatureServer'
+  url: 'https://pliga-server.cvc.gov.co/arcgis/rest/services/PLIGA/VT_VERTIMIENTOS/FeatureServer'
 );
