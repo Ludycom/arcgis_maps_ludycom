@@ -9,7 +9,6 @@ import com.arcgismaps.ApiKey
 import com.arcgismaps.ArcGISEnvironment
 import com.arcgismaps.Color
 import com.arcgismaps.mapping.ArcGISMap
-import com.arcgismaps.mapping.BasemapStyle
 import com.arcgismaps.mapping.view.MapView
 import com.google.gson.Gson
 import com.ludycom.arcgis_maps.entities.AGMLParams
@@ -77,13 +76,13 @@ internal class AGMLMapView(
             result
         ) }
 
-
+        Log.e("PRUEBA DE APIKEY", params.toString())
         ArcGISEnvironment.apiKey = ApiKey.create(params.apiKey)
 
         if(params.basemapStyle.getBasemapStyle() != null) {
-            mapView.map = ArcGISMap()
+            mapView.map = ArcGISMap(params.basemapStyle!!.getBasemapStyle()!!)
         } else {
-            mapView.map = ArcGISMap(params.basemapStyle.getBasemapStyle()!!)
+            mapView.map = ArcGISMap()
         }
 
         mapView.selectionProperties.color = Color.red

@@ -1,6 +1,7 @@
 package com.ludycom.arcgis_maps
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.coroutineScope
 import com.arcgismaps.data.ServiceFeatureTable

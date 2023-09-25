@@ -3,7 +3,7 @@ version '1.0-SNAPSHOT'
 
 buildscript {
     ext.kotlin_version = '1.7.20'
-    ext.arcgisVersion = '200.1.0'
+    ext.arcgisVersion = '200.2.0'
     repositories {
         google()
         mavenCentral()
@@ -30,6 +30,24 @@ apply plugin: 'kotlin-android'
 
 android {
     compileSdkVersion 33
+
+    buildFeatures {
+        viewBinding true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            consumerProguardFiles 'proguard-rules.pro'
+        }
+        debug {
+
+        }
+    }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8

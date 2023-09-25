@@ -65,7 +65,7 @@ class _AGMLMapState extends State<AGMLMap> {
 
   @override
   Widget build(BuildContext context) {
-    
+
     if(Platform.isAndroid) {
       return PlatformViewLink(
         surfaceFactory: (context, controller) {
@@ -93,9 +93,10 @@ class _AGMLMapState extends State<AGMLMap> {
         viewType: _viewType
       );
     }
-
+    
+    
     return const Center(
-      child: Text('Not support platform.')
+      child: Text('Not support platform 2.')
     );
 
   }
