@@ -1,3 +1,3 @@
-## 0.0.1
+## 0.0.3
 
-* TODO: Describe initial release.
+* Fixed bug when generating release version, the com.google.c library ode.gson library was not keeping the information of the objects sent from Platform Channels.

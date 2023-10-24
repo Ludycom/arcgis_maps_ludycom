@@ -1,4 +1,7 @@
-import 'package:arcgis_maps_example/pages/clip_geometry_.dart';
+
+import 'package:arcgis_maps/entities/agml_oauth_user_configurations.dart';
+import 'package:arcgis_maps/pigeons/auth/auth_pigeon.g.dart';
+import 'package:arcgis_maps/utils/agml_auth_manager.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -6,6 +9,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:arcgis_maps_example/pages/basic_map.dart';
 import 'package:arcgis_maps_example/pages/manage_map.dart';
+import 'package:arcgis_maps_example/pages/clip_geometry_.dart';
 import 'package:arcgis_maps_example/pages/download_from_portal.dart';
 
 import 'package:arcgis_maps_example/pages/load_feature_tablet_service.dart';
@@ -74,6 +78,32 @@ class _HomePage extends StatelessWidget {
             style: TextStyle(color: Colors.white),
           )
         ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              final authManager = AGMLAuthManager();
+              final configs = AGMLOAuthUserConfigurations(
+                  clientId: dotenv.env['OAUTH_CLIENT_ID'] ?? '',
+                  portalUrl: dotenv.env['PORTAL_URL'] ?? '',
+                  redirectUrl: dotenv.env['OAUTH_REDIRECT_URI'] ?? ''
+              );
+              
+              try {
+                authManager.authApi.oAuthUser(
+                  configs.toPigeon(),
+                  dotenv.env['ARCGIS_USER'] ?? '',
+                  dotenv.env['ARCGIS_PASSWORD'] ?? ''
+                );
+              } catch(e) {
+                print(e);
+              }
+            },
+            child: const Text(
+              'OAuth 2.0',
+              style: TextStyle(color: Colors.white),
+            )
+          )
+        ],
       ),
       body: ListView.custom(
         childrenDelegate: SliverChildListDelegate.fixed(

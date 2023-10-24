@@ -294,5 +294,6 @@ final agmlPortalItemList = [
 
 final agmlFeatureService = AGMLFeatureService(
   // url: 'https://services2.arcgis.com/ZQgQTuoyBrtmoGdP/arcgis/rest/services/Mobile_Data_Collection_WFL1/FeatureServer'
-  url: 'https://pliga-server.cvc.gov.co/arcgis/rest/services/PLIGA/VT_VERTIMIENTOS/FeatureServer'
+  //   url: 'https://pliga-server.cvc.gov.co/arcgis/rest/services/Prueba_SYNC_7oct/FeatureServer'
+    url: 'https://services.arcgis.com/UxVKZtnb6p8rrswX/arcgis/rest/services/Pruebas_SYNC_WFL1/FeatureServer'
 );

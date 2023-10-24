@@ -1,3 +1,4 @@
+import 'package:arcgis_maps/utils/agml_auth_manager.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -18,6 +19,12 @@ class BasicMapPage extends StatefulWidget {
 class _BasicMapPageState extends State<BasicMapPage> {
 
   @override
+  void initState() {
+    AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -30,7 +37,7 @@ class _BasicMapPageState extends State<BasicMapPage> {
       ),
       body: AGMLMap(
         creationParams: AGMLCreationParams(
-          apiKey: dotenv.env['API_KEY']
+          basemapStyle: AGMLBasemapStyleEnum.arcGISTopographic
         ),
         onMapCreated: (controller) {
           

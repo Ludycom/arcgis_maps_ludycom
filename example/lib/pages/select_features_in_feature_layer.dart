@@ -1,4 +1,5 @@
 import 'package:arcgis_maps/entities/features/agml_feature_service_layer.dart';
+import 'package:arcgis_maps/utils/agml_auth_manager.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -33,6 +34,7 @@ class _SelectFeaturesInFeatureLayerPageState extends State<SelectFeaturesInFeatu
 
   @override
   void initState() {
+    // AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
     super.initState();
   }
 
@@ -51,7 +53,7 @@ class _SelectFeaturesInFeatureLayerPageState extends State<SelectFeaturesInFeatu
         children: [
           AGMLMap(
             creationParams: AGMLCreationParams(
-              apiKey: dotenv.env['API_KEY']
+              basemapStyle: AGMLBasemapStyleEnum.arcGISTopographic
             ),
             onChangeMapServiceLayers: (layers) {
               setState(() { serviceLayersInMap = layers; });

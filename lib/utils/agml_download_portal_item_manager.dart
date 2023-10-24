@@ -108,11 +108,11 @@ class AGMLDownloadPortalItemManager {
 
   Future<AGMLDownloadPortalItem> downloadClipPortalItemGeoDatabase(AGMLFeatureService featureService) async {
     const method = '/downloadClipPortalItemGeoDatabase';
-    late final AGMLDownloadPortalItem downloadPortalItem;
+    // late final AGMLDownloadPortalItem downloadPortalItem;
 
     try {
-      // final channelResponse = await 
-      _channel.invokeMethod(method, featureService.toJson()) as String;
+      // final channelResponse = await
+      _channel.invokeMethod(method, featureService.toJson());
       // downloadPortalItem = AGMLDownloadPortalItem.fromJson(jsonDecode(channelResponse));
     } catch (e) {
       if (kDebugMode) print(e);

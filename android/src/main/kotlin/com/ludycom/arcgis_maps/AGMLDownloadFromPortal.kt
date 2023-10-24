@@ -2,8 +2,8 @@ package com.ludycom.arcgis_maps
 
 import android.content.Context
 import com.arcgismaps.mapping.PortalItem
-import com.ludycom.arcgis_maps.entities.AGMLPortalItem
-import com.ludycom.arcgis_maps.entities.AGMLDownloadPortalItem
+import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
+import com.ludycom.arcgis_maps.entities.agml.AGMLDownloadPortalItem
 import com.ludycom.arcgis_maps.utils.AGMLDownloadStatusEnum
 import org.apache.commons.io.FileUtils
 import java.io.BufferedInputStream

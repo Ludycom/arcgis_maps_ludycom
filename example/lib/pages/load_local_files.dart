@@ -1,3 +1,4 @@
+import 'package:arcgis_maps/utils/agml_auth_manager.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -28,6 +29,12 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
   late final AGMLMapController mapController;
 
   @override
+  void initState() {
+    AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -42,7 +49,6 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
         children: [
           AGMLMap(
             creationParams: AGMLCreationParams(
-              apiKey: dotenv.env['API_KEY'],
               basemapStyle: AGMLBasemapStyleEnum.arcGISTopographic
             ),
             onMapCreated: (controller) => mapController = controller,

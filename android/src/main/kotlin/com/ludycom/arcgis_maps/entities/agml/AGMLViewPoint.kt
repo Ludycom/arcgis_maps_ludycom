@@ -1,4 +1,4 @@
-package com.ludycom.arcgis_maps.entities
+package com.ludycom.arcgis_maps.entities.agml
 
 data class AGMLViewPoint(
     val latitude: Double,

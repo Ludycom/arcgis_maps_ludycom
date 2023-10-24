@@ -23,11 +23,11 @@ import com.arcgismaps.mapping.view.ScreenCoordinate
 import com.arcgismaps.mapping.view.SingleTapConfirmedEvent
 import com.arcgismaps.portal.Portal
 import com.google.gson.Gson
-import com.ludycom.arcgis_maps.entities.AGMLArcGISOnlinePortalItem
-import com.ludycom.arcgis_maps.entities.AGMLLocalFeatureLayer
-import com.ludycom.arcgis_maps.entities.AGMLPortalItem
-import com.ludycom.arcgis_maps.entities.AGMLFeatureServiceLayer
-import com.ludycom.arcgis_maps.entities.AGMLViewPoint
+import com.ludycom.arcgis_maps.entities.agml.AGMLArcGISOnlinePortalItem
+import com.ludycom.arcgis_maps.entities.agml.AGMLLocalFeatureLayer
+import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
+import com.ludycom.arcgis_maps.entities.agml.AGMLFeatureServiceLayer
+import com.ludycom.arcgis_maps.entities.agml.AGMLViewPoint
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel

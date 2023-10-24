@@ -1,23 +1,20 @@
 package com.ludycom.arcgis_maps
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.coroutineScope
-import com.arcgismaps.data.ServiceFeatureTable
 import com.arcgismaps.geometry.Envelope
 import com.arcgismaps.geometry.Point
 import com.arcgismaps.geometry.SpatialReference
-import com.arcgismaps.mapping.ArcGISMap
-import com.arcgismaps.mapping.BasemapStyle
 import com.arcgismaps.mapping.PortalItem
 import com.arcgismaps.mapping.view.Graphic
 import com.arcgismaps.mapping.view.ScreenCoordinate
 import com.arcgismaps.tasks.geodatabase.GeodatabaseSyncTask
 import com.google.gson.Gson
-import com.ludycom.arcgis_maps.entities.AGMLDownloadPortalItem
-import com.ludycom.arcgis_maps.entities.AGMLPortalItem
-import com.ludycom.arcgis_maps.entities.AGMLServiceFeature
+import com.ludycom.arcgis_maps.entities.agml.AGMLDownloadPortalItem
+import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
+import com.ludycom.arcgis_maps.entities.agml.AGMLServiceFeature
+import com.ludycom.arcgis_maps.pigeons.AuthPigeonImpl
 import com.ludycom.arcgis_maps.utils.AGMLDownloadStatusEnum
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -48,6 +45,9 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
     context = flutterPluginBinding.applicationContext
 
+    // ArcGIS Methods
+    AuthPigeon.AuthApi.setUp(flutterPluginBinding.binaryMessenger, AuthPigeonImpl(context))
+
     flutterPluginBinding
       .platformViewRegistry
       .registerViewFactory(
@@ -62,6 +62,7 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         )
       )
   }
+
 
   override fun onMethodCall(call: MethodCall, result: Result) {
     when(call.method) {

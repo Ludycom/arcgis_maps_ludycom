@@ -1,3 +1,4 @@
+import 'package:arcgis_maps/utils/agml_auth_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
@@ -26,6 +27,12 @@ class _LoadPortalFeatureLayerPageState extends State<LoadPortalFeatureLayerPage>
   late final AGMLMapController mapController;
 
   @override
+  void initState() {
+    AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
 
     return Scaffold(
@@ -41,7 +48,7 @@ class _LoadPortalFeatureLayerPageState extends State<LoadPortalFeatureLayerPage>
         children: [
           AGMLMap(
             creationParams: AGMLCreationParams(
-              apiKey: dotenv.env['API_KEY']
+
             ),
             onMapCreated: (controller) => mapController = controller,
             onChangeMapServiceLayers: (layers) {

@@ -31,7 +31,7 @@ The ArcGIS Maps is compatible with applications:
 - Deployed on iOS 11 or higher (Not available)
 - Built using the Android SDK 26 or higher
 
-#### Android
+### Android
 ```bash
 buildscript {
     ext.kotlin_version = '1.7.x'
@@ -57,7 +57,43 @@ allprojects {
 }
 ```
 
-#### iOS
+##### OAuth 2.0
+
+Change parent="@android:style/Theme.Light.NoTitleBar" to parent="Theme.AppCompat"
+
+````bash
+    <style name="LaunchTheme" parent="Theme.AppCompat">
+        <!-- Show a splash screen on the activity. Automatically removed when
+             the Flutter engine draws its first frame -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+````
+
+Add the OAuthUserSignMainActivity and OAuthUserSignInActivity in AndroidManifest.xml
+
+````bash
+    <activity
+        android:name="com.ludycom.arcgis_maps.activities.OAuthUserSignMainActivity"
+        android:label="OAuthUserSignMainActivity"
+        android:theme="@style/LaunchTheme">
+    </activity>
+        <activity
+        android:name="com.ludycom.arcgis_maps.activities.OAuthUserSignInActivity"
+        android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+        android:exported="true"
+        android:launchMode="singleTop">
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data
+                android:host="auth"
+                android:scheme="my-ags-app" />
+        </intent-filter>
+    </activity>
+````
+
+### iOS
 ```bash
 Not available
 ```

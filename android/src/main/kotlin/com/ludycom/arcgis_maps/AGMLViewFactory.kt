@@ -5,13 +5,11 @@ import android.util.Log
 import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import com.arcgismaps.ApiKey
-import com.arcgismaps.ArcGISEnvironment
 import com.arcgismaps.Color
 import com.arcgismaps.mapping.ArcGISMap
 import com.arcgismaps.mapping.view.MapView
 import com.google.gson.Gson
-import com.ludycom.arcgis_maps.entities.AGMLParams
+import com.ludycom.arcgis_maps.entities.agml.AGMLParams
 
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
@@ -76,11 +74,8 @@ internal class AGMLMapView(
             result
         ) }
 
-        Log.e("PRUEBA DE APIKEY", params.toString())
-        ArcGISEnvironment.apiKey = ApiKey.create(params.apiKey)
-
         if(params.basemapStyle.getBasemapStyle() != null) {
-            mapView.map = ArcGISMap(params.basemapStyle!!.getBasemapStyle()!!)
+            mapView.map = ArcGISMap(params.basemapStyle.getBasemapStyle()!!)
         } else {
             mapView.map = ArcGISMap()
         }
