@@ -48,8 +48,42 @@ class OAuthUserConfigurations {
   }
 }
 
-class _AuthApiCodec extends StandardMessageCodec {
-  const _AuthApiCodec();
+abstract class AGMLAuthApiHandler {
+  static const MessageCodec<Object?> codec = StandardMessageCodec();
+
+  void oAuthUserState(bool state);
+
+  static void setup(AGMLAuthApiHandler? api, {BinaryMessenger? binaryMessenger}) {
+    {
+      final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
+          'dev.flutter.pigeon.AuthPigeon.AGMLAuthApiHandler.oAuthUserState', codec,
+          binaryMessenger: binaryMessenger);
+      if (api == null) {
+        channel.setMessageHandler(null);
+      } else {
+        channel.setMessageHandler((Object? message) async {
+          assert(message != null,
+          'Argument for dev.flutter.pigeon.AuthPigeon.AGMLAuthApiHandler.oAuthUserState was null.');
+          final List<Object?> args = (message as List<Object?>?)!;
+          final bool? arg_state = (args[0] as bool?);
+          assert(arg_state != null,
+              'Argument for dev.flutter.pigeon.AuthPigeon.AGMLAuthApiHandler.oAuthUserState was null, expected non-null bool.');
+          try {
+            api.oAuthUserState(arg_state!);
+            return wrapResponse(empty: true);
+          } on PlatformException catch (e) {
+            return wrapResponse(error: e);
+          }          catch (e) {
+            return wrapResponse(error: PlatformException(code: 'error', message: e.toString()));
+          }
+        });
+      }
+    }
+  }
+}
+
+class _AGMLAuthApiCodec extends StandardMessageCodec {
+  const _AGMLAuthApiCodec();
   @override
   void writeValue(WriteBuffer buffer, Object? value) {
     if (value is OAuthUserConfigurations) {
@@ -71,19 +105,19 @@ class _AuthApiCodec extends StandardMessageCodec {
   }
 }
 
-class AuthApi {
-  /// Constructor for [AuthApi].  The [binaryMessenger] named argument is
+class AGMLAuthApi {
+  /// Constructor for [AGMLAuthApi].  The [binaryMessenger] named argument is
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
-  AuthApi({BinaryMessenger? binaryMessenger})
+  AGMLAuthApi({BinaryMessenger? binaryMessenger})
       : _binaryMessenger = binaryMessenger;
   final BinaryMessenger? _binaryMessenger;
 
-  static const MessageCodec<Object?> codec = _AuthApiCodec();
+  static const MessageCodec<Object?> codec = _AGMLAuthApiCodec();
 
   Future<void> oAuthUser(OAuthUserConfigurations arg_portalConfig, String arg_username, String arg_password) async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.AuthPigeon.AuthApi.oAuthUser', codec,
+        'dev.flutter.pigeon.AuthPigeon.AGMLAuthApi.oAuthUser', codec,
         binaryMessenger: _binaryMessenger);
     final List<Object?>? replyList =
         await channel.send(<Object?>[arg_portalConfig, arg_username, arg_password]) as List<Object?>?;
@@ -105,7 +139,7 @@ class AuthApi {
 
   Future<void> setApiKey(String arg_apiKey) async {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
-        'dev.flutter.pigeon.AuthPigeon.AuthApi.setApiKey', codec,
+        'dev.flutter.pigeon.AuthPigeon.AGMLAuthApi.setApiKey', codec,
         binaryMessenger: _binaryMessenger);
     final List<Object?>? replyList =
         await channel.send(<Object?>[arg_apiKey]) as List<Object?>?;

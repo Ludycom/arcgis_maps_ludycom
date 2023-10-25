@@ -67,8 +67,32 @@ data class OAuthUserConfigurations (
     )
   }
 }
+/** Generated class from Pigeon that represents Flutter messages that can be called from Kotlin. */
 @Suppress("UNCHECKED_CAST")
-private object AuthApiCodec : StandardMessageCodec() {
+class AGMLAuthApiHandler(private val binaryMessenger: BinaryMessenger) {
+  companion object {
+    /** The codec used by AGMLAuthApiHandler. */
+    val codec: MessageCodec<Any?> by lazy {
+      StandardMessageCodec()
+    }
+  }
+  fun oAuthUserState(stateArg: Boolean, callback: (Result<Unit>) -> Unit) {
+    val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.AuthPigeon.AGMLAuthApiHandler.oAuthUserState", codec)
+    channel.send(listOf(stateArg)) {
+      if (it is List<*>) {
+        if (it.size > 1) {
+          callback(Result.failure(FlutterError(it[0] as String, it[1] as String, it[2] as String?)));
+        } else {
+          callback(Result.success(Unit));
+        }
+      } else {
+        callback(Result.failure(FlutterError("channel-error",  "Unable to establish connection on channel.", "")));
+      } 
+    }
+  }
+}
+@Suppress("UNCHECKED_CAST")
+private object AGMLAuthApiCodec : StandardMessageCodec() {
   override fun readValueOfType(type: Byte, buffer: ByteBuffer): Any? {
     return when (type) {
       128.toByte() -> {
@@ -91,20 +115,20 @@ private object AuthApiCodec : StandardMessageCodec() {
 }
 
 /** Generated interface from Pigeon that represents a handler of messages from Flutter. */
-interface AuthApi {
+interface AGMLAuthApi {
   fun oAuthUser(portalConfig: OAuthUserConfigurations, username: String, password: String)
   fun setApiKey(apiKey: String)
 
   companion object {
-    /** The codec used by AuthApi. */
+    /** The codec used by AGMLAuthApi. */
     val codec: MessageCodec<Any?> by lazy {
-      AuthApiCodec
+      AGMLAuthApiCodec
     }
-    /** Sets up an instance of `AuthApi` to handle messages through the `binaryMessenger`. */
+    /** Sets up an instance of `AGMLAuthApi` to handle messages through the `binaryMessenger`. */
     @Suppress("UNCHECKED_CAST")
-    fun setUp(binaryMessenger: BinaryMessenger, api: AuthApi?) {
+    fun setUp(binaryMessenger: BinaryMessenger, api: AGMLAuthApi?) {
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.AuthPigeon.AuthApi.oAuthUser", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.AuthPigeon.AGMLAuthApi.oAuthUser", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>
@@ -125,7 +149,7 @@ interface AuthApi {
         }
       }
       run {
-        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.AuthPigeon.AuthApi.setApiKey", codec)
+        val channel = BasicMessageChannel<Any?>(binaryMessenger, "dev.flutter.pigeon.AuthPigeon.AGMLAuthApi.setApiKey", codec)
         if (api != null) {
           channel.setMessageHandler { message, reply ->
             val args = message as List<Any?>

@@ -1,11 +1,12 @@
-
-import 'package:arcgis_maps/entities/agml_oauth_user_configurations.dart';
-import 'package:arcgis_maps/pigeons/auth/auth_pigeon.g.dart';
-import 'package:arcgis_maps/utils/agml_auth_manager.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+
+import 'package:arcgis_maps/entities/agml_oauth_user_configurations.dart';
+import 'package:arcgis_maps/pigeons/auth/auth_pigeon.g.dart';
+import 'package:arcgis_maps/utils/agml_auth_manager.dart';
+import 'package:arcgis_maps/utils/agml_auth_manager_handler.dart';
 
 import 'package:arcgis_maps_example/pages/basic_map.dart';
 import 'package:arcgis_maps_example/pages/manage_map.dart';
@@ -38,6 +39,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    AGMLAuthApiHandler.setup(AGMLAuthManagerHandler((state) {
+      print('Prueba estado de autenticación');
+    }));
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -74,7 +79,7 @@ class _HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const FittedBox(
           child: Text(
-            'ArcGIS Maps by Ludycom, Jonathan Poveda',
+            'ArcGIS Maps by Ludycom S.A.S., Jonathan Poveda',
             style: TextStyle(color: Colors.white),
           )
         ),

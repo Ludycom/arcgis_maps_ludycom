@@ -22,6 +22,7 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.embedding.engine.plugins.lifecycle.FlutterLifecycleAdapter
+import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -30,6 +31,8 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
 
+
+lateinit var flutterBinaryMessenger: BinaryMessenger
 
 
 class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -44,9 +47,10 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     channel.setMethodCallHandler { call, result -> onMethodCall(call, result) }
 
     context = flutterPluginBinding.applicationContext
+    flutterBinaryMessenger = flutterPluginBinding.binaryMessenger
 
-    // ArcGIS Methods
-    AuthPigeon.AuthApi.setUp(flutterPluginBinding.binaryMessenger, AuthPigeonImpl(context))
+    AuthPigeon.AuthApi.setUp(flutterBinaryMessenger, AuthPigeonImpl(context))
+    AuthPigeon.AuthFlutterApi(flutterBinaryMessenger)
 
     flutterPluginBinding
       .platformViewRegistry

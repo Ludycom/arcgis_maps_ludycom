@@ -1,5 +1,6 @@
+import 'package:arcgis_maps/pigeons/auth/auth_pigeon.g.dart';
 
-import '../pigeons/auth/auth_pigeon.g.dart';
+
 
 class AGMLOAuthUserConfigurations {
   final String portalUrl;
@@ -15,7 +16,7 @@ class AGMLOAuthUserConfigurations {
   OAuthUserConfigurations toPigeon() => OAuthUserConfigurations(
     portalUrl: portalUrl,
     clientId: clientId,
-    redirectUrl:redirectUrl
+    redirectUrl: redirectUrl
   );
 
 }

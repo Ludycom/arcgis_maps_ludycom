@@ -25,8 +25,13 @@ class OAuthUserConfigurations {
   //swiftOptions: SwiftOptions(),
 ))
 
+@FlutterApi()
+abstract class AGMLAuthApiHandler {
+  void oAuthUserState(bool state);
+}
+
 @HostApi()
-abstract class AuthApi {
+abstract class AGMLAuthApi {
 
   void oAuthUser(OAuthUserConfigurations portalConfig, String username, String password);
 
