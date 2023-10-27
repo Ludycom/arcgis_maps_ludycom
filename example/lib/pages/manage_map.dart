@@ -23,7 +23,7 @@ class _ManageMapPageState extends State<ManageMapPage> {
 
   @override
   void initState() {
-    AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
+    // AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
     super.initState();
   }
   

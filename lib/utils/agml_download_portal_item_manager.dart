@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:arcgis_maps/entities/agml_geodatabase.dart';
 import 'package:arcgis_maps/entities/features/agml_feature_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
@@ -57,7 +58,7 @@ class AGMLDownloadPortalItemManager {
 
   Future<List<AGMLDownloadPortalItem>> downloadPortalItems(List<AGMLPortalItem> portalItems) async {
     if(_status == AGMLDownloadPortalItemManagerStatusEnum.downloading) {
-      throw statusWarnningException;
+      throw statusWarningException;
     }
     _status = AGMLDownloadPortalItemManagerStatusEnum.downloading;
     _onChangedManagerStatusStream.add(_status);
@@ -106,23 +107,27 @@ class AGMLDownloadPortalItemManager {
     return downloadPortalItem;
   }
 
-  Future<AGMLDownloadPortalItem> downloadClipPortalItemGeoDatabase(AGMLFeatureService featureService) async {
-    const method = '/downloadClipPortalItemGeoDatabase';
-    // late final AGMLDownloadPortalItem downloadPortalItem;
+  Future<AGMLGeodatabase?> generateGeodatabaseReplicaFromFeatureService(AGMLFeatureService featureService) async {
+    const method = '/generateGeodatabaseReplicaFromFeatureService';
 
     try {
-      // final channelResponse = await
-      _channel.invokeMethod(method, featureService.toJson());
-      // downloadPortalItem = AGMLDownloadPortalItem.fromJson(jsonDecode(channelResponse));
+      final channelResponse = await _channel.invokeMethod(method, featureService.toJson()) as String;
+      final geodatabase = AGMLGeodatabase.fromJson(jsonDecode(channelResponse));
+      return geodatabase;
     } catch (e) {
       if (kDebugMode) print(e);
-      
+      return null;
     }
-
-    // return downloadPortalItem;
-    return AGMLDownloadPortalItem(portalItem: AGMLPortalItem(url: 'url'));
   }
 
+  Future<void> syncGeodatabaseReplicaToFeatureService(AGMLGeodatabase geodatabase) async {
+    const method = '/syncGeodatabaseReplicaToFeatureService';
 
-  static const statusWarnningException = FormatException('in-process downloads: The AGMLDownloadPortalItemManager is downloading, you have to validate AGMLDownloadPortalItemManager.status');
+    final channelResponse = await _channel.invokeMethod(method, geodatabase.toJson());
+    print(channelResponse);
+
+    return;
+  }
+
+  static const statusWarningException = FormatException('in-process downloads: The AGMLDownloadPortalItemManager is downloading, you have to validate AGMLDownloadPortalItemManager.status');
 }

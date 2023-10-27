@@ -1,3 +1,4 @@
+import 'package:arcgis_maps/entities/agml_geodatabase.dart';
 import 'package:arcgis_maps/utils/agml_auth_manager.dart';
 import 'package:flutter/material.dart';
 
@@ -30,7 +31,7 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
 
   @override
   void initState() {
-    AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
+    // AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
     super.initState();
   }
 
@@ -65,8 +66,8 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
                       backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
                     ),
                     onPressed: () {
-                      mapController.loadGeoDatabaseFeatureLayer(
-                        AGMLLocalGeodatabase(
+                      mapController.loadGeoDatabase(
+                        AGMLGeodatabase(
                           path: '/storage/emulated/0/Android/data/com.ludycom.arcgis_maps_example/files/Portal Items/cb1b20748a9f4d128dad8a87244e3e37/LA_Trails.geodatabase',
                           viewPoint: AGMLViewPoint(
                             latitude: 34.0772, 
@@ -86,8 +87,8 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
                       backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
                     ),
                     onPressed: () {
-                      mapController.loadGeoDatabaseFeatureLayer(
-                        AGMLLocalGeodatabase(
+                      mapController.loadGeoDatabase(
+                        AGMLGeodatabase(
                           path: '/storage/emulated/0/Android/data/com.ludycom.arcgis_maps_example/filestest.geodatabase',
                           viewPoint: AGMLViewPoint(
                             latitude: 34.0772, 

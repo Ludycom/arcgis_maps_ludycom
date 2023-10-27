@@ -28,7 +28,7 @@ class _LoadPortalFeatureLayerPageState extends State<LoadPortalFeatureLayerPage>
 
   @override
   void initState() {
-    AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
+    // AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
     super.initState();
   }
 
@@ -48,7 +48,7 @@ class _LoadPortalFeatureLayerPageState extends State<LoadPortalFeatureLayerPage>
         children: [
           AGMLMap(
             creationParams: AGMLCreationParams(
-
+              basemapStyle: AGMLBasemapStyleEnum.arcGISTopographic
             ),
             onMapCreated: (controller) => mapController = controller,
             onChangeMapServiceLayers: (layers) {
@@ -72,12 +72,13 @@ class _LoadPortalFeatureLayerPageState extends State<LoadPortalFeatureLayerPage>
                     onPressed: () {
                       mapController.loadPortalItemFeatureLayer(
                         AGMLPortalItem(
-                          url: 'https://www.arcgis.com/home/item.html?id=68ec42517cdd439e81b036210483e8e7',
-                          viewPoint: AGMLViewPoint(
-                            latitude: 39.7294, 
-                            longitude: -104.8319,
-                            scale: 500000.0
-                          )                     
+                          // url: 'https://www.arcgis.com/home/item.html?id=68ec42517cdd439e81b036210483e8e7',
+                          url: 'https://ludycom.maps.arcgis.com/home/item.html?id=1a1c8686db25409b8f17da6beb163032',
+                          // viewPoint: AGMLViewPoint(
+                          //   latitude: 39.7294,
+                          //   longitude: -104.8319,
+                          //   scale: 500000.0
+                          // )
                         )
                       );
                     }, 

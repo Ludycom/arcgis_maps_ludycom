@@ -104,7 +104,7 @@ class _AGMLMapState extends State<AGMLMap> {
   void _configureController() {
     if(widget.onMapCreated != null) widget.onMapCreated!(_controller);
     
-    _controller.selecetedLayerStreamController.stream.listen((event) {
+    _controller.selectedLayerStreamController.stream.listen((event) {
       if(widget.onLayerSelected != null) widget.onLayerSelected!(event);
     });
 

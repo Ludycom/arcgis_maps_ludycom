@@ -9,7 +9,8 @@ import com.arcgismaps.ArcGISEnvironment
 import com.ludycom.arcgis_maps.activities.OAuthUserSignMainActivity
 
 
-class AuthPigeonImpl(private val context: Context?) : AuthPigeon.AuthApi {
+
+class AuthPigeonImpl(private val context: Context?) : AuthPigeon.AGMLAuthApi {
 
     override fun oAuthUser(
         portalConfig: OAuthUserConfigurations,

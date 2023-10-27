@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:arcgis_maps/entities/agml_geodatabase.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
@@ -22,8 +23,8 @@ class AGMLMapController {
 
   late MethodChannel _channel;
 
-  final StreamController<List<dynamic>> _selecetedLayerStreamController = StreamController();
-  StreamController<List<dynamic>> get selecetedLayerStreamController => _selecetedLayerStreamController;
+  final StreamController<List<dynamic>> _selectedLayerStreamController = StreamController();
+  StreamController<List<dynamic>> get selectedLayerStreamController => _selectedLayerStreamController;
 
   late List<AGMLFeatureServiceLayer> _mapServiceLayers;
   List<AGMLFeatureServiceLayer> get mapServiceLayers => _mapServiceLayers;
@@ -46,7 +47,7 @@ class AGMLMapController {
     _channel.setMethodCallHandler((call) async {
       if (call.method == '/getSelectedFeatureInFeatureLayer') {
         final selectedLayers = call.arguments as List<dynamic>;
-        _selecetedLayerStreamController.add(selectedLayers);
+        _selectedLayerStreamController.add(selectedLayers);
       }
     });
   }
@@ -156,12 +157,23 @@ class AGMLMapController {
 
   //? From loca files type GeoDatabase, GeoPackage or Shapefile
 
-  Future<void> loadGeoDatabaseFeatureLayer(AGMLLocalGeodatabase agmlLocalGeodatabase) async {
+  Future<void> loadGeoDatabase(AGMLGeodatabase agmlGeodatabase) async {
     const method = '/loadGeoDatabaseFeatureLayer';
 
     try {
-      final channelResponse = await _channel.invokeMethod(method, agmlLocalGeodatabase.toMap()) as String;
-      onLoadLocalFeatureChannelResponse(agmlLocalGeodatabase, channelResponse);
+      final channelResponse = await _channel.invokeMethod(method, agmlGeodatabase.toJson()) as String;
+      onLoadLocalFeatureChannelResponse(AGMLLocalFeatureLayer(path: agmlGeodatabase.path!), channelResponse);
+    } catch(e) {
+      if(kDebugMode) print(e);
+    }
+  }
+
+  Future<void> loadSyncGeodatabase(AGMLGeodatabase agmlGeodatabase) async {
+    const method = '/loadSyncGeodatabase';
+
+    try {
+      final channelResponse = await _channel.invokeMethod(method, agmlGeodatabase.toJson()) as String;
+      onLoadLocalFeatureChannelResponse(AGMLLocalFeatureLayer(path: agmlGeodatabase.path!), channelResponse);
     } catch(e) {
       if(kDebugMode) print(e);
     }

@@ -1,6 +1,5 @@
 package com.ludycom.arcgis_maps.activities
 
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -16,6 +15,7 @@ import com.ludycom.arcgis_maps.R
 import com.ludycom.arcgis_maps.entities.agml.models.OAuthUserSignInViewModel
 import com.ludycom.arcgis_maps.flutterBinaryMessenger
 import kotlinx.coroutines.launch
+
 
 
 class OAuthUserSignMainActivity: AppCompatActivity() {
@@ -49,18 +49,12 @@ class OAuthUserSignMainActivity: AppCompatActivity() {
 
         lifecycleScope.launch {
             portal.load().onSuccess {
-                val intentResult = Intent()
-                intentResult.putExtra("STATUS", "AUTHENTICATED")
-                setResult(RESULT_OK, intentResult)
-                AuthPigeon.AuthFlutterApi(flutterBinaryMessenger).oAuthUserState(true) {
+                AuthPigeon.AGMLAuthApiHandler(flutterBinaryMessenger).oAuthUserState(true) {
                     println(it.toString())
                 }
                 finish()
             }.onFailure {
-                val intentResult = Intent()
-                intentResult.putExtra("STATUS", "UNAUTHENTICATED")
-                setResult(RESULT_CANCELED, intentResult)
-                AuthPigeon.AuthFlutterApi(flutterBinaryMessenger).oAuthUserState(true) {
+                AuthPigeon.AGMLAuthApiHandler(flutterBinaryMessenger).oAuthUserState(false) {
                     println(it.toString())
                 }
                 finish()

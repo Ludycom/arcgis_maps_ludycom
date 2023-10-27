@@ -27,6 +27,7 @@ import com.ludycom.arcgis_maps.entities.agml.AGMLArcGISOnlinePortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLLocalFeatureLayer
 import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLFeatureServiceLayer
+import com.ludycom.arcgis_maps.entities.agml.AGMLGeodatabase
 import com.ludycom.arcgis_maps.entities.agml.AGMLViewPoint
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -220,9 +221,9 @@ class AGMLViewMethodCall(
             }
             "/loadGeoDatabaseFeatureLayer" -> {
                 val arguments = call.arguments as Map<*, *>
-                val arcGISMapLocalPortalItem = Gson().fromJson(JSONObject(arguments).toString(), AGMLLocalFeatureLayer::class.java)
+                val agmlGeodatabase = Gson().fromJson(JSONObject(arguments).toString(), AGMLGeodatabase::class.java)
 
-                val geoDatabaseFile = File(arcGISMapLocalPortalItem.path)
+                val geoDatabaseFile = File(agmlGeodatabase.path!!)
                 val geoDatabase = Geodatabase(geoDatabaseFile.path)
 
                 lifecycle.coroutineScope.launch {
@@ -231,11 +232,30 @@ class AGMLViewMethodCall(
                             val featureTables = geoDatabase.featureTables
                             val geoDatabaseFeatureTable = geoDatabase.getFeatureTable(featureTables.first().tableName) //todo: Implementar un for
                             val featureLayer = FeatureLayer.createWithFeatureTable(geoDatabaseFeatureTable!!)
-                            setFeatureLayer(featureLayer, arcGISMapLocalPortalItem.viewPoint)
+                            setFeatureLayer(featureLayer, agmlGeodatabase.viewPoint)
                             result.success(featureLayer.id)
                         }.onFailure {
                             result.success("failure");
                         }
+                    }
+                }
+            }
+            "/loadSyncGeodatabase" -> {
+                val arguments = call.arguments as Map<*, *>
+                val agmlGeodatabase = Gson().fromJson(JSONObject(arguments).toString(), AGMLGeodatabase::class.java)
+
+                val geoDatabaseFile = File(agmlGeodatabase.path!!)
+                val geoDatabase = Geodatabase(geoDatabaseFile.path)
+
+                mapView.map?.operationalLayers?.clear();
+
+                lifecycle.coroutineScope.launch {
+                    geoDatabase.load().onFailure {
+                        result.error("LOAD_ERROR", "Failed in geodatabase load", "loadSyncGeodatabase failed")
+                    }
+
+                    mapView.map!!.operationalLayers += geoDatabase.featureTables.map { featureTable ->
+                        FeatureLayer.createWithFeatureTable(featureTable)
                     }
                 }
             }

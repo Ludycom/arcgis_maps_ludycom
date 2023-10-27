@@ -9,7 +9,7 @@ enum PageRoutesEnum {
   load_local_files,
   select_features_in_feature_layer,
   manage_map,
-  clip_geometry
+  generate_geodatabase_replica_from_feature_service
 }
 
 extension PageRoutesEnumExtension on PageRoutesEnum {
@@ -23,7 +23,7 @@ extension PageRoutesEnumExtension on PageRoutesEnum {
       case PageRoutesEnum.load_local_files: return "/load_loca_files";
       case PageRoutesEnum.select_features_in_feature_layer: return "/select_features_in_feature_layer";
       case PageRoutesEnum.manage_map: return "/manage_map";
-      case PageRoutesEnum.clip_geometry: return "/clip_geometry";
+      case PageRoutesEnum.generate_geodatabase_replica_from_feature_service: return "/generate_geodatabase_replica_from_feature_service";
     }
   }
 }

@@ -80,19 +80,10 @@ class _DownloadFormPortalPageState extends State<DownloadFormPortalPage> {
               },
               child: const Text('Check if have Portal Layers')
             ),
-            OutlinedButton(
-              onPressed: () async {
-                final checkIfHaveFiles = await agmlDownloadPortalItemManager.downloadClipPortalItemGeoDatabase(agmlFeatureService);
-                setState(() {
-                  // checkPortalItemList = checkIfHaveFiles;
-                });
-              },
-              child: const Text('download Clip Portal Item GeoDatabase')
-            ),
             Container(
               margin: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: isDownloading ? Colors.green : Colors.blue,
+                color: isDownloading ? Colors.green : Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(5)
               ),
               width: 200,
@@ -185,7 +176,7 @@ class _DownloadFileCard extends StatelessWidget {
             children: [
               Container(
                 height: 30,
-                width: 100,
+                width: 110,
                 alignment: Alignment.center,
                 margin: const EdgeInsets.all(5),
                 padding: const EdgeInsets.all(5),
@@ -291,9 +282,3 @@ final agmlPortalItemList = [
   AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=15a7cbd3af1e47cfa5d2c6b93dc44fc2'),
   AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=68ec42517cdd439e81b036210483e8e7')
 ];
-
-final agmlFeatureService = AGMLFeatureService(
-  // url: 'https://services2.arcgis.com/ZQgQTuoyBrtmoGdP/arcgis/rest/services/Mobile_Data_Collection_WFL1/FeatureServer'
-  //   url: 'https://pliga-server.cvc.gov.co/arcgis/rest/services/Prueba_SYNC_7oct/FeatureServer'
-    url: 'https://services.arcgis.com/UxVKZtnb6p8rrswX/arcgis/rest/services/Pruebas_SYNC_WFL1/FeatureServer'
-);

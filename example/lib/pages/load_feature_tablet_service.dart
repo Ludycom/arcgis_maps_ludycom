@@ -26,7 +26,7 @@ class _LoadFeatureTabletServicePageState extends State<LoadFeatureTabletServiceP
 
   @override
   void initState() {
-    AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
+    // AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
     super.initState();
   }
 

@@ -20,7 +20,7 @@ class _BasicMapPageState extends State<BasicMapPage> {
 
   @override
   void initState() {
-    AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
+    // AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
     super.initState();
   }
 

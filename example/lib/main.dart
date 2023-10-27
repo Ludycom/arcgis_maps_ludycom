@@ -1,3 +1,4 @@
+import 'package:arcgis_maps_example/pages/generate_geodatabase_replica_from_feature.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -10,7 +11,6 @@ import 'package:arcgis_maps/utils/agml_auth_manager_handler.dart';
 
 import 'package:arcgis_maps_example/pages/basic_map.dart';
 import 'package:arcgis_maps_example/pages/manage_map.dart';
-import 'package:arcgis_maps_example/pages/clip_geometry_.dart';
 import 'package:arcgis_maps_example/pages/download_from_portal.dart';
 
 import 'package:arcgis_maps_example/pages/load_feature_tablet_service.dart';
@@ -40,17 +40,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
 
-    AGMLAuthApiHandler.setup(AGMLAuthManagerHandler((state) {
-      print('Prueba estado de autenticación');
-    }));
-
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: Colors.blue,
+        colorSchemeSeed: const Color(0xff243edd),
         appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.blue,
+          backgroundColor: Color(0xff243edd),
         ),
       ),
       title: 'ArcGIS Maps',
@@ -64,14 +60,31 @@ class MyApp extends StatelessWidget {
         PageRoutesEnum.load_local_files.path: (context) => const LoadLocalFilesPage(),
         PageRoutesEnum.select_features_in_feature_layer.path: (context) => const SelectFeaturesInFeatureLayerPage(),
         PageRoutesEnum.manage_map.path: (context) => const ManageMapPage(),
-        PageRoutesEnum.clip_geometry.path: (context) => const ClipGeometryPage(),
+        PageRoutesEnum.generate_geodatabase_replica_from_feature_service.path: (context) => const GenerateGeodatabaseReplicaFromFeaturePage()
       },
     );
   }
 }
 
 
-class _HomePage extends StatelessWidget {
+class _HomePage extends StatefulWidget {
+
+  @override
+  State<_HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<_HomePage> {
+
+  bool authState = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    AGMLAuthApiHandler.setup(AGMLAuthManagerHandler((state) {
+      setState(() { authState = state; });
+    }));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +97,8 @@ class _HomePage extends StatelessWidget {
           )
         ),
         actions: [
+          if(authState) const Icon(Icons.check_box_rounded, color: Colors.green)
+          else const Icon(Icons.warning_rounded, color: Colors.yellow),
           TextButton(
             onPressed: () {
               final authManager = AGMLAuthManager();
@@ -92,7 +107,7 @@ class _HomePage extends StatelessWidget {
                   portalUrl: dotenv.env['PORTAL_URL'] ?? '',
                   redirectUrl: dotenv.env['OAUTH_REDIRECT_URI'] ?? ''
               );
-              
+
               try {
                 authManager.authApi.oAuthUser(
                   configs.toPigeon(),
@@ -150,14 +165,21 @@ class _HomePage extends StatelessWidget {
             ),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.map),
+                leading: const Icon(Icons.cloud_sync_rounded),
+                title: const Text('Generate FeatureService replica, load geodatabase and sync'),
+                onTap: () => Navigator.of(context).pushNamed(PageRoutesEnum.generate_geodatabase_replica_from_feature_service.path),
+              ),
+            ),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.touch_app_rounded),
                 title: const Text('Select a feature layer and get layer data'),
                 onTap: () => Navigator.of(context).pushNamed(PageRoutesEnum.select_features_in_feature_layer.path),
               ),
             ),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.map),
+                leading: const Icon(Icons.back_hand_rounded),
                 title: const Text('Manage map'),
                 onTap: () => Navigator.of(context).pushNamed(PageRoutesEnum.manage_map.path),
               ),

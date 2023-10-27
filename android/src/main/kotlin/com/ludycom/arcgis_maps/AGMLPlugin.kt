@@ -3,6 +3,7 @@ package com.ludycom.arcgis_maps
 import android.content.Context
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.coroutineScope
+import com.arcgismaps.data.Geodatabase
 import com.arcgismaps.geometry.Envelope
 import com.arcgismaps.geometry.Point
 import com.arcgismaps.geometry.SpatialReference
@@ -10,8 +11,12 @@ import com.arcgismaps.mapping.PortalItem
 import com.arcgismaps.mapping.view.Graphic
 import com.arcgismaps.mapping.view.ScreenCoordinate
 import com.arcgismaps.tasks.geodatabase.GeodatabaseSyncTask
+import com.arcgismaps.tasks.geodatabase.SyncDirection
+import com.arcgismaps.tasks.geodatabase.SyncGeodatabaseParameters
+import com.arcgismaps.tasks.geodatabase.SyncLayerOption
 import com.google.gson.Gson
 import com.ludycom.arcgis_maps.entities.agml.AGMLDownloadPortalItem
+import com.ludycom.arcgis_maps.entities.agml.AGMLGeodatabase
 import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLServiceFeature
 import com.ludycom.arcgis_maps.pigeons.AuthPigeonImpl
@@ -30,6 +35,7 @@ import io.flutter.plugin.common.MethodChannel.Result
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.io.File
+import java.util.UUID
 
 
 lateinit var flutterBinaryMessenger: BinaryMessenger
@@ -49,8 +55,8 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
     context = flutterPluginBinding.applicationContext
     flutterBinaryMessenger = flutterPluginBinding.binaryMessenger
 
-    AuthPigeon.AuthApi.setUp(flutterBinaryMessenger, AuthPigeonImpl(context))
-    AuthPigeon.AuthFlutterApi(flutterBinaryMessenger)
+    AuthPigeon.AGMLAuthApi.setUp(flutterBinaryMessenger, AuthPigeonImpl(context))
+    AuthPigeon.AGMLAuthApiHandler(flutterBinaryMessenger)
 
     flutterPluginBinding
       .platformViewRegistry
@@ -127,78 +133,107 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
           }
         }
       }
-      "/downloadClipPortalItemGeoDatabase" -> {
+      "/generateGeodatabaseReplicaFromFeatureService" -> {
         val arguments = call.arguments as Map<*, *>
-        val arcGISMapFeatureService = Gson().fromJson(JSONObject(arguments).toString(), AGMLServiceFeature::class.java)
+        val agmlFeatureService = Gson().fromJson(JSONObject(arguments).toString(), AGMLServiceFeature::class.java)
 
-        val geoDatabasesSyncTask = GeodatabaseSyncTask(arcGISMapFeatureService.url)
+        val gson = Gson()
 
+        val geoDatabasesSyncTask = GeodatabaseSyncTask(agmlFeatureService.url)
 
         lifecycle!!.coroutineScope.launch {
           geoDatabasesSyncTask.load().onSuccess {
-//            val fullExtent = geoDatabasesSyncTask.featureServiceInfo?.fullExtent;
-            val minScreenPoint = ScreenCoordinate(200.0, 200.0)
+
+            val minScreenPoint = ScreenCoordinate(500.0, 500.0)
             if(
-              geoDatabasesSyncTask.featureServiceInfo?.fullExtent?.width != null &&
-              geoDatabasesSyncTask.featureServiceInfo?.fullExtent?.height != null
+              geoDatabasesSyncTask.featureServiceInfo?.fullExtent?.width == null ||
+              geoDatabasesSyncTask.featureServiceInfo?.fullExtent?.height == null
             ) {
-              val maxScreenPoint = ScreenCoordinate(
-                geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.width - 200.0,
-                geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.height - 200.0
-              )
-
-              // convert screen points to map points
-              val minPoint = Point(minScreenPoint.x, minScreenPoint.y, SpatialReference.webMercator())
-              val maxPoint = Point(maxScreenPoint.x, maxScreenPoint.y, SpatialReference.webMercator())
-              // use the points to define and return an envelope
-//              if (minPoint != null && maxPoint != null) {
-              val envelope = Envelope(minPoint, maxPoint)
-              downloadArea.geometry = envelope
-//              }
-              val defaultParameters = geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters(
-                downloadArea.geometry!!.extent
-              ).getOrElse { err ->
-                result.success(err.message)
-
-                return@launch
-              }.apply {
-                layerOptions.removeIf { layerOptions ->
-                  layerOptions.layerId != 0L
-                }
-              }
-              defaultParameters.returnAttachments = false
-
-
-              geoDatabasesSyncTask.createGenerateGeodatabaseJob(
-                defaultParameters,
-                context!!.getExternalFilesDir(null)!!.path+"test.geodatabase"
-              ).run {
-                start()
-                val geodatabase = result().getOrElse { err ->
-                  result.success(err.message)
-                  return@launch
-                }
-                geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
-
-              }
+              result.error("LOAD_ERROR" ,"Error in .featureServiceInfo?.fullExtent?", "May be is null")
+              return@launch
             }
 
-//            if(fullExtent != null) {
-//
-//            }
+            val maxScreenPoint = ScreenCoordinate(
+              geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.width - 500.0,
+              geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.height - 500.0
+            )
 
+            val minPoint = Point(minScreenPoint.x, minScreenPoint.y, SpatialReference.webMercator())
+            val maxPoint = Point(maxScreenPoint.x, maxScreenPoint.y, SpatialReference.webMercator())
 
+            val envelope = Envelope(minPoint, maxPoint)
+            downloadArea.geometry = envelope
 
+            val defaultParameters = geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters(
+              downloadArea.geometry!!.extent
+            ).getOrElse { err ->
+              result.error("LOAD_ERROR" ,"Error in geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters()", err.message)
+              return@launch
+            }.apply {
+              layerOptions.removeIf { layerOptions ->
+                layerOptions.layerId != 0L
+              }
+            }
+            defaultParameters.returnAttachments = false
+
+            val provisionFolder = File(context!!.getExternalFilesDir(null)?.absolutePath.toString()+File.separator+"Sync")
+            if (!provisionFolder.exists()) {
+              provisionFolder.mkdirs()
+            }
+
+            val fileName = UUID.randomUUID().toString()
+
+            geoDatabasesSyncTask.createGenerateGeodatabaseJob(
+              defaultParameters,
+              provisionFolder.path+File.separator+fileName+".geodatabase"
+            ).run {
+              start()
+              val geodatabase = result().getOrElse { err ->
+                result.error("LOAD_ERROR" ,"Error in geoDatabasesSyncTask.load()", err.message)
+                return@launch
+              }
+              geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
+
+              result.success(gson.toJson(
+                AGMLGeodatabase(
+                  path = geodatabase.path,
+                  url = agmlFeatureService.url,
+                  viewPoint = null
+              )))
+            }
           }.onFailure { err ->
-            result.success(err.message)
-
+            result.error("LOAD_ERROR" ,"Error in geoDatabasesSyncTask.load()", err.message)
           }
+        }
+      }
+      "/syncGeodatabaseReplicaToFeatureService" -> {
+        val arguments = call.arguments as Map<*, *>
+        val agmlGeodatabase = Gson().fromJson(JSONObject(arguments).toString(), AGMLGeodatabase::class.java)
 
+        val geodatabase = Geodatabase(agmlGeodatabase.path!!)
+        val geodatabaseSyncTask = GeodatabaseSyncTask(agmlGeodatabase.url!!)
 
+        val syncParams = SyncGeodatabaseParameters()
+        syncParams.geodatabaseSyncDirection = SyncDirection.Bidirectional
+        syncParams.shouldRollbackOnFailure = false
+
+        val syncDirection = SyncLayerOption()
+
+        geodatabaseSyncTask.createSyncGeodatabaseJob(syncParams, geodatabase).run {
+          start()
+          lifecycle!!.coroutineScope.launch {
+            val result = result().getOrElse { err ->
+              result.error("SYNC_ERROR" ,"Error in geodatabaseSyncTask.createSyncGeodatabaseJob()", err.message)
+              return@launch
+            }
+
+            println(result)
+          }
         }
       }
     }
   }
+
 
   override fun onDetachedFromEngine(binding: FlutterPluginBinding) {
     channel.setMethodCallHandler(null)
@@ -223,57 +258,4 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   interface LifecycleProvider {
     fun getLifecycle(): Lifecycle?
   }
-
 }
-
-
-
-//        val aGMLDownloadPortalItem = AGMLDownloadPortalItem(
-//          portalItem = arcGISMapServicePortalItem,
-//          pathLocation = ""
-//        )
-
-//        val portalItem = PortalItem(aGMLDownloadPortalItem.portalItem.url)
-//        val offlineMapTask  = OfflineMapTask(portalItem)
-
-//        val envelope = Envelope(
-//          -13049000.0, 3861000.0, -13048000.0, 3861500.0,
-//          spatialReference = SpatialReference.webMercator()
-//        )
-
-
-
-//          offlineMapTask.createDefaultGenerateOfflineMapParameters(
-//            envelope,
-//            5000.0,
-//            10000.0
-//          ).onSuccess { offlineParams ->
-//            val folderPath = context!!.getExternalFilesDir(null)?.absolutePath.toString()+File.separator+"Portal Map Task"
-//
-//            val provisionFolder = File(folderPath)
-//            if (!provisionFolder.exists()) {
-//              provisionFolder.mkdirs()
-//            }
-//
-//            offlineParams.includeBasemap = true
-//            val offlineMapJob = offlineMapTask.createGenerateOfflineMapJob(
-//              offlineParams,
-//              provisionFolder.path
-//            )
-//
-//            offlineMapJob.start()
-//            offlineMapJob.result().onSuccess { offlineMapResult ->
-//              if (offlineMapResult.offlineMap.utilityNetworks.size > 0) {
-//                val utilityNetwork = offlineMapResult.offlineMap.utilityNetworks[0]
-//                utilityNetwork.load().onSuccess {
-//                  result.success("Todo bien")
-//                }.onFailure { err ->
-//                  println(err)
-//                }
-//              }
-//            }.onFailure { err ->
-//              println(err)
-//            }
-//          }.onFailure { err ->
-//            println(err)
-//          }
