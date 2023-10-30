@@ -26,7 +26,7 @@ class AGMLGeodatabase {
     id: json['id:'],
     path: json['path'],
     url: json['url'],
-    viewPoint: json['portalItem'] != null ? AGMLViewPoint.fromJson(json['portalItem']) : null
+    viewPoint: json['viewPoint'] != null ? AGMLViewPoint.fromJson(json['viewPoint']) : null
   );
 
 }

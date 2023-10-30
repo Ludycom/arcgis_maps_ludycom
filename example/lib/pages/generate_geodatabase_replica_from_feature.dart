@@ -61,7 +61,7 @@ class _GenerateGeodatabaseReplicaFromFeaturePageState extends State<GenerateGeod
                       if(geodatabase == null) return;
 
                       setState(() => isLoading = true);
-                      mapController.loadSyncGeodatabase(geodatabase!);
+                      mapController.loadGeoDatabase(geodatabase!);
                       setState(() => isLoading = false);
                     },
                     child: const Text('load/edit geodatabase')
@@ -98,6 +98,6 @@ class _GenerateGeodatabaseReplicaFromFeaturePageState extends State<GenerateGeod
 }
 
 final agmlFeatureService = AGMLFeatureService(
-    url: 'https://services2.arcgis.com/ZQgQTuoyBrtmoGdP/ArcGIS/rest/services/canyonlands_roads_trails/FeatureServer'
-    // url: 'https://services.arcgis.com/UxVKZtnb6p8rrswX/arcgis/rest/services/Pruebas_SYNC_WFL1/FeatureServer'
+    // url: 'https://services2.arcgis.com/ZQgQTuoyBrtmoGdP/ArcGIS/rest/services/canyonlands_roads_trails/FeatureServer'
+    url: 'https://services.arcgis.com/UxVKZtnb6p8rrswX/arcgis/rest/services/Pruebas_SYNC_WFL1/FeatureServer'
 );

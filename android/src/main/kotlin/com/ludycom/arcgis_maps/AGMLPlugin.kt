@@ -9,6 +9,7 @@ import com.arcgismaps.geometry.Point
 import com.arcgismaps.geometry.SpatialReference
 import com.arcgismaps.mapping.PortalItem
 import com.arcgismaps.mapping.view.Graphic
+import com.arcgismaps.mapping.view.MapView
 import com.arcgismaps.mapping.view.ScreenCoordinate
 import com.arcgismaps.tasks.geodatabase.GeodatabaseSyncTask
 import com.arcgismaps.tasks.geodatabase.SyncDirection
@@ -19,6 +20,7 @@ import com.ludycom.arcgis_maps.entities.agml.AGMLDownloadPortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLGeodatabase
 import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLServiceFeature
+import com.ludycom.arcgis_maps.entities.agml.AGMLViewPoint
 import com.ludycom.arcgis_maps.pigeons.AuthPigeonImpl
 import com.ludycom.arcgis_maps.utils.AGMLDownloadStatusEnum
 
@@ -144,7 +146,9 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         lifecycle!!.coroutineScope.launch {
           geoDatabasesSyncTask.load().onSuccess {
 
-            val minScreenPoint = ScreenCoordinate(500.0, 500.0)
+            /*
+
+            val minScreenPoint = ScreenCoordinate(200.0, 200.0)
             if(
               geoDatabasesSyncTask.featureServiceInfo?.fullExtent?.width == null ||
               geoDatabasesSyncTask.featureServiceInfo?.fullExtent?.height == null
@@ -154,18 +158,28 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             }
 
             val maxScreenPoint = ScreenCoordinate(
-              geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.width - 500.0,
-              geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.height - 500.0
+              geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.width - 200.0,
+              geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.height - 200.0
             )
 
-            val minPoint = Point(minScreenPoint.x, minScreenPoint.y, SpatialReference.webMercator())
-            val maxPoint = Point(maxScreenPoint.x, maxScreenPoint.y, SpatialReference.webMercator())
+            val mapView = MapView(context!!)
+
+            val minPoint = mapView.screenToLocation(minScreenPoint)
+            val maxPoint = mapView.screenToLocation(maxScreenPoint)
+
+            if(minPoint == null || maxPoint == null) {
+              result.error("POINT_ERROR" ,"Error in minPoint == null || maxPoint == null", "May be is null")
+              return@launch
+            }
 
             val envelope = Envelope(minPoint, maxPoint)
             downloadArea.geometry = envelope
 
+             */
+
             val defaultParameters = geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters(
-              downloadArea.geometry!!.extent
+              //downloadArea.geometry!!.extent
+              geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!
             ).getOrElse { err ->
               result.error("LOAD_ERROR" ,"Error in geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters()", err.message)
               return@launch
@@ -192,13 +206,18 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
                 result.error("LOAD_ERROR" ,"Error in geoDatabasesSyncTask.load()", err.message)
                 return@launch
               }
-              geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
+              //geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
 
               result.success(gson.toJson(
                 AGMLGeodatabase(
                   path = geodatabase.path,
                   url = agmlFeatureService.url,
                   viewPoint = null
+                  //AGMLViewPoint(
+                  //  latitude = geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.center.y,
+                  //  longitude = geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.center.x,
+                  //  scale = 4000.0
+                  //)
               )))
             }
           }.onFailure { err ->
