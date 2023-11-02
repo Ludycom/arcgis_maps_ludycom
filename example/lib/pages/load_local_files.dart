@@ -1,13 +1,15 @@
-import 'package:arcgis_maps/entities/agml_geodatabase.dart';
-import 'package:arcgis_maps/utils/agml_auth_manager.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
+import 'package:arcgis_maps/utils/agml_auth_manager.dart';
+import 'package:arcgis_maps/entities/agml_geodatabase.dart';
+import 'package:arcgis_maps/entities/agml_mobile_map_package.dart';
+
 import 'package:arcgis_maps/entities/features/agml_local_shapefile.dart';
 import 'package:arcgis_maps/entities/features/agml_local_geopackage.dart';
-import 'package:arcgis_maps/entities/features/agml_local_geodatabase.dart';
 
 import 'package:arcgis_maps/widgets/agml_map.dart';
 import 'package:arcgis_maps/entities/agml_params.dart';
@@ -18,7 +20,6 @@ import 'package:arcgis_maps/entities/agml_view_point.dart';
 
 class LoadLocalFilesPage extends StatefulWidget {
 
-  
   const LoadLocalFilesPage({super.key});
 
   @override
@@ -31,7 +32,7 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
 
   @override
   void initState() {
-    // AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
+    AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
     super.initState();
   }
 
@@ -87,9 +88,9 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
                       backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
                     ),
                     onPressed: () {
-                      mapController.loadGeoDatabase(
-                        AGMLGeodatabase(
-                          path: '/storage/emulated/0/Android/data/com.ludycom.arcgis_maps_example/filestest.geodatabase',
+                      mapController.loadMobileMapPackage(
+                        AGMLMobileMapPackage(
+                          path: '/storage/emulated/0/Android/data/com.ludycom.arcgis_maps_example/files/Portal Items/260eb6535c824209964cf281766ebe43/SanFrancisco.mmpk',
                           viewPoint: AGMLViewPoint(
                             latitude: 34.0772, 
                             longitude: -118.7989,
@@ -99,7 +100,7 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
                       );
                     },
                     child: const Text(
-                      'Load Geodatabase From FeatureServer',
+                      'Load Mobile Map Package',
                       style: TextStyle(color: Colors.white)
                     )
                   ),
@@ -157,6 +158,29 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
                       'Remove Feature layers',
                       style: TextStyle(color: Colors.white)
                     )
+                  ),
+
+                  TextButton(
+                    style: const ButtonStyle(
+                        backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
+                    ),
+                    child: const Icon(Icons.location_history, color: Colors.white),
+                    onPressed: () async {
+                      final location = await mapController.getLocation();
+                      if(kDebugMode) print(location);
+                      final location9377 = await mapController.getLocation9377AndSetPoint();
+                      if(kDebugMode) print(location9377);
+                    },
+                  ),
+                  TextButton(
+                    style: const ButtonStyle(
+                      backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
+                    ),
+                    child: const Icon(Icons.location_searching_rounded, color: Colors.white),
+                    onPressed: () async {
+                      mapController.startLocation();
+
+                    },
                   ),
                 ],
               ),

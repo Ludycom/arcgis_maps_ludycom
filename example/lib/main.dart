@@ -1,4 +1,5 @@
 import 'package:arcgis_maps_example/pages/generate_geodatabase_replica_from_feature.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -115,7 +116,7 @@ class _HomePageState extends State<_HomePage> {
                   dotenv.env['ARCGIS_PASSWORD'] ?? ''
                 );
               } catch(e) {
-                print(e);
+                if(kDebugMode) print(e);
               }
             },
             child: const Text(

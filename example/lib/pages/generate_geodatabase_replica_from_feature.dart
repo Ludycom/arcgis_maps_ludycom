@@ -5,6 +5,7 @@ import 'package:arcgis_maps/entities/features/agml_feature_service.dart';
 import 'package:arcgis_maps/utils/agml_controller.dart';
 import 'package:arcgis_maps/utils/agml_download_portal_item_manager.dart';
 import 'package:arcgis_maps/widgets/agml_map.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 
@@ -71,7 +72,7 @@ class _GenerateGeodatabaseReplicaFromFeaturePageState extends State<GenerateGeod
                       if(geodatabase == null) return;
 
                       setState(() => isLoading = true);
-                      final response = await agmlDownloadPortalItemManager.syncGeodatabaseReplicaToFeatureService(geodatabase!);
+                      agmlDownloadPortalItemManager.syncGeodatabaseReplicaToFeatureService(geodatabase!);
                       setState(() => isLoading = false);
                     },
                     child: const Text('Sync replica')
@@ -87,7 +88,7 @@ class _GenerateGeodatabaseReplicaFromFeaturePageState extends State<GenerateGeod
               ),
               onMapCreated: (controller) => mapController = controller,
               onChangeMapLocalLayers: (layers) {
-                print(layers);
+                if(kDebugMode) print(layers);
               },
             ),
           )

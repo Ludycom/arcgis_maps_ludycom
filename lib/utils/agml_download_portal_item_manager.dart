@@ -124,7 +124,7 @@ class AGMLDownloadPortalItemManager {
     const method = '/syncGeodatabaseReplicaToFeatureService';
 
     final channelResponse = await _channel.invokeMethod(method, geodatabase.toJson());
-    print(channelResponse);
+    if(kDebugMode) print(channelResponse);
 
     return;
   }

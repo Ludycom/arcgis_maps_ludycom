@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 
 
 import 'package:arcgis_maps/entities/features/agml_portal_item.dart';
-import 'package:arcgis_maps/entities/features/agml_feature_service.dart';
 import 'package:arcgis_maps/entities/agml_download_portal_item.dart';
 import 'package:arcgis_maps/utils/agml_download_portal_item_manager.dart';
 import 'package:arcgis_maps/utils/enums/agml_download_portal_item_status_enum.dart';
@@ -280,5 +279,6 @@ Color getStatusColor(AGMLDownloadPortalItemStatusEnum state) {
 final agmlPortalItemList = [
   AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=cb1b20748a9f4d128dad8a87244e3e37'),
   AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=15a7cbd3af1e47cfa5d2c6b93dc44fc2'),
-  AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=68ec42517cdd439e81b036210483e8e7')
+  AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=68ec42517cdd439e81b036210483e8e7'),
+  AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=260eb6535c824209964cf281766ebe43')
 ];

@@ -1,7 +1,5 @@
-import 'package:arcgis_maps/utils/agml_auth_manager.dart';
 import 'package:flutter/material.dart';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:arcgis_maps/widgets/agml_map.dart';
 import 'package:arcgis_maps/entities/agml_params.dart';
@@ -20,7 +18,7 @@ class _BasicMapPageState extends State<BasicMapPage> {
 
   @override
   void initState() {
-    // AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
+    //AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
     super.initState();
   }
 

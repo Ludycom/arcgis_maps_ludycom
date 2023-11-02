@@ -16,7 +16,6 @@ class AGMLCreationParams {
     "initViewPoint": initViewPoint?.toJson(),
     "basemapStyle": _toMapAGMLBasemapStyleEnum(basemapStyle)
   };
-
 }
 
 String _toMapAGMLBasemapStyleEnum(AGMLBasemapStyleEnum state) {

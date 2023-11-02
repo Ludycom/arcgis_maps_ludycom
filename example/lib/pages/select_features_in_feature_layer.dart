@@ -1,15 +1,12 @@
-import 'package:arcgis_maps/entities/features/agml_feature_service_layer.dart';
-import 'package:arcgis_maps/utils/agml_auth_manager.dart';
 import 'package:flutter/material.dart';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_json_view/flutter_json_view.dart';
 
 
 import 'package:arcgis_maps/entities/agml_params.dart';
 import 'package:arcgis_maps/entities/agml_view_point.dart';
+import 'package:arcgis_maps/entities/features/agml_feature_service_layer.dart';
 import 'package:arcgis_maps/entities/features/agml_arcgis_online_portal_item.dart';
-
 
 import 'package:arcgis_maps/widgets/agml_map.dart';
 import 'package:arcgis_maps/utils/agml_controller.dart';

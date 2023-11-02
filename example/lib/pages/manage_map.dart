@@ -1,7 +1,6 @@
-import 'package:arcgis_maps/utils/agml_auth_manager.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'package:arcgis_maps/widgets/agml_map.dart';
 import 'package:arcgis_maps/entities/agml_params.dart';
@@ -101,6 +100,16 @@ class _ManageMapPageState extends State<ManageMapPage> {
                     ),
                     child: const Icon(Icons.compass_calibration_rounded, color: Colors.white),
                     onPressed: () => mapController.autoPaneModeCompassNavigation(),
+                  ),
+                  TextButton(
+                    style: const ButtonStyle(
+                      backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
+                    ),
+                    child: const Icon(Icons.location_history, color: Colors.white),
+                    onPressed: () async {
+                      final location = await mapController.getLocation();
+                      if(kDebugMode) print(location);
+                    },
                   ),
                 ],
               ),

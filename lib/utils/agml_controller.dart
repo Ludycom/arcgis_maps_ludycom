@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:arcgis_maps/entities/agml_geodatabase.dart';
+import 'package:arcgis_maps/entities/agml_mobile_map_package.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
@@ -7,7 +9,6 @@ import 'package:flutter/foundation.dart';
 import 'package:arcgis_maps/entities/features/agml_portal_item.dart';
 import 'package:arcgis_maps/entities/features/agml_local_shapefile.dart';
 import 'package:arcgis_maps/entities/features/agml_local_geopackage.dart';
-import 'package:arcgis_maps/entities/features/agml_local_geodatabase.dart';
 import 'package:arcgis_maps/entities/features/agml_local_feature_layer.dart';
 import 'package:arcgis_maps/entities/features/agml_feature_service_layer.dart';
 import 'package:arcgis_maps/entities/features/agml_arcgis_online_portal_item.dart';
@@ -168,6 +169,17 @@ class AGMLMapController {
     }
   }
 
+  Future<void> loadMobileMapPackage(AGMLMobileMapPackage agmlGeodatabase) async {
+    const method = '/loadMobileMapPackage';
+
+    try {
+      final channelResponse = await _channel.invokeMethod(method, agmlGeodatabase.toJson()) as String;
+      onLoadLocalFeatureChannelResponse(AGMLLocalFeatureLayer(path: agmlGeodatabase.path!), channelResponse);
+    } catch(e) {
+      if(kDebugMode) print(e);
+    }
+  }
+
   Future<void> loadSyncGeodatabase(AGMLGeodatabase agmlGeodatabase) async {
     const method = '/loadSyncGeodatabase';
 
@@ -313,6 +325,30 @@ class AGMLMapController {
       _channel.invokeMethod(method);
     } on PlatformException catch (e) {
       if(kDebugMode) print(e);
+    }
+  }
+
+  Future<AGMLViewPoint?> getLocation() async {
+    const method = '/getLocation';
+    try {
+      final response = await _channel.invokeMethod(method) as String;
+      final location = AGMLViewPoint.fromJson(jsonDecode(response));
+      return location;
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      return null;
+    }
+  }
+
+  Future<AGMLViewPoint?> getLocation9377AndSetPoint() async {
+    const method = '/getLocation9377AndSetPoint';
+    try {
+      final response = await _channel.invokeMethod(method) as String;
+      final location = AGMLViewPoint.fromJson(jsonDecode(response));
+      return location;
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      return null;
     }
   }
 

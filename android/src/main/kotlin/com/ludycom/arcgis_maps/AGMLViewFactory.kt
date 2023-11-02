@@ -6,8 +6,11 @@ import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import com.arcgismaps.Color
+import com.arcgismaps.geometry.Point
 import com.arcgismaps.mapping.ArcGISMap
+import com.arcgismaps.mapping.view.GraphicsOverlay
 import com.arcgismaps.mapping.view.MapView
+import com.arcgismaps.mapping.view.geometryeditor.GeometryEditor
 import com.google.gson.Gson
 import com.ludycom.arcgis_maps.entities.agml.AGMLParams
 
@@ -49,6 +52,8 @@ internal class AGMLMapView(
     private var mapView = MapView(context)
     private var params: AGMLParams
 
+    private var graphicsOverlay: GraphicsOverlay = GraphicsOverlay()
+
 
     private var lifecycle: Lifecycle = lifecycleProvider.getLifecycle()
         ?: throw RuntimeException("Context is null, can't create MapView!")
@@ -60,19 +65,6 @@ internal class AGMLMapView(
 
         val channel = "plugins.flutter.io/arcgis_maps:${id}"
 
-        val aGMLViewMethodCall = AGMLViewMethodCall(
-            context,
-            messenger,
-            channel,
-            lifecycle,
-            mapView
-        )
-
-        methodChannel = MethodChannel(messenger, channel)
-        methodChannel.setMethodCallHandler { call, result -> aGMLViewMethodCall.onMethodCall(
-            call,
-            result
-        ) }
 
         if(params.basemapStyle.getBasemapStyle() != null) {
             mapView.map = ArcGISMap(params.basemapStyle.getBasemapStyle()!!)
@@ -80,7 +72,24 @@ internal class AGMLMapView(
             mapView.map = ArcGISMap()
         }
 
+        mapView.graphicsOverlays.add(graphicsOverlay)
+
         mapView.selectionProperties.color = Color.red
+
+        val aGMLViewMethodCall = AGMLViewMethodCall(
+            context,
+            messenger,
+            channel,
+            lifecycle,
+            mapView,
+            graphicsOverlay
+        )
+
+        methodChannel = MethodChannel(messenger, channel)
+        methodChannel.setMethodCallHandler { call, result -> aGMLViewMethodCall.onMethodCall(
+            call,
+            result
+        ) }
 
         MethodChannel(messenger, "$channel:mapStatus").invokeMethod("/mapIsReady", "")
     }

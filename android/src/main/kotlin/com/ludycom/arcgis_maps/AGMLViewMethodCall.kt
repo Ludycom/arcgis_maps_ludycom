@@ -9,15 +9,26 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.coroutineScope
+import com.arcgismaps.Color
 import com.arcgismaps.data.Feature
 import com.arcgismaps.data.GeoPackage
 import com.arcgismaps.data.Geodatabase
 import com.arcgismaps.data.ServiceFeatureTable
 import com.arcgismaps.data.ShapefileFeatureTable
+import com.arcgismaps.geometry.GeometryEngine
+import com.arcgismaps.geometry.Point
+import com.arcgismaps.geometry.SpatialReference
 import com.arcgismaps.location.LocationDisplayAutoPanMode
+import com.arcgismaps.mapping.MobileMapPackage
 import com.arcgismaps.mapping.PortalItem
 import com.arcgismaps.mapping.Viewpoint
 import com.arcgismaps.mapping.layers.FeatureLayer
+import com.arcgismaps.mapping.symbology.SimpleLineSymbol
+import com.arcgismaps.mapping.symbology.SimpleLineSymbolStyle
+import com.arcgismaps.mapping.symbology.SimpleMarkerSymbol
+import com.arcgismaps.mapping.symbology.SimpleMarkerSymbolStyle
+import com.arcgismaps.mapping.view.Graphic
+import com.arcgismaps.mapping.view.GraphicsOverlay
 import com.arcgismaps.mapping.view.MapView
 import com.arcgismaps.mapping.view.ScreenCoordinate
 import com.arcgismaps.mapping.view.SingleTapConfirmedEvent
@@ -28,6 +39,7 @@ import com.ludycom.arcgis_maps.entities.agml.AGMLLocalFeatureLayer
 import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLFeatureServiceLayer
 import com.ludycom.arcgis_maps.entities.agml.AGMLGeodatabase
+import com.ludycom.arcgis_maps.entities.agml.AGMLMobileMapPackage
 import com.ludycom.arcgis_maps.entities.agml.AGMLViewPoint
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -40,6 +52,7 @@ import org.json.JSONObject
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.withTimeoutOrNull
+import java.lang.Exception
 
 
 class AGMLViewMethodCall(
@@ -47,7 +60,8 @@ class AGMLViewMethodCall(
     messenger: BinaryMessenger,
     channel: String,
     private val lifecycle: Lifecycle,
-    private val mapView: MapView
+    private val mapView: MapView,
+    private val graphicsOverlay: GraphicsOverlay
 ) {
 
     private val methodChannel = MethodChannel(messenger, channel)
@@ -136,7 +150,8 @@ class AGMLViewMethodCall(
     }
 
 
-    val locationDisplay = mapView.locationDisplay
+    private val locationDisplay = mapView.locationDisplay
+    private var isStartedLocation = false
 
     private val permissionErrorCode = "-1"
     private val permissionErrorMessage = "Permissions Denied"
@@ -234,6 +249,23 @@ class AGMLViewMethodCall(
                             val featureLayer = FeatureLayer.createWithFeatureTable(geoDatabaseFeatureTable!!)
                             setFeatureLayer(featureLayer, agmlGeodatabase.viewPoint)
                             result.success(featureLayer.id)
+                        }.onFailure {
+                            result.success("failure");
+                        }
+                    }
+                }
+            }
+            "/loadMobileMapPackage" -> {
+                val arguments = call.arguments as Map<*, *>
+                val agmlMobileMapPackage = Gson().fromJson(JSONObject(arguments).toString(), AGMLMobileMapPackage::class.java)
+
+                val mapPackage = MobileMapPackage(agmlMobileMapPackage.path!!)
+
+                lifecycle.coroutineScope.launch {
+                    withTimeoutOrNull(5000.milliseconds) {
+                        mapPackage.load().onSuccess {
+                            mapView.map = mapPackage.maps.first()
+                            result.success("basemap")
                         }.onFailure {
                             result.success("failure");
                         }
@@ -357,7 +389,9 @@ class AGMLViewMethodCall(
             "/startLocation" -> {
                 if(checkHavePermissions()) {
                     lifecycle.coroutineScope.launch {
-                        locationDisplay.dataSource.start()
+                        locationDisplay.dataSource.start().onSuccess {
+                            isStartedLocation = true
+                        }
                     }
                 } else {
                     result.error(
@@ -405,6 +439,71 @@ class AGMLViewMethodCall(
                         permissionErrorMessage,
                         permissionErrorDetail
                     )
+                }
+            }
+            "/getLocation" -> {
+                if(!isStartedLocation) {
+                  result.error("FAILED", "Error in isStartedLocation, may be is null", "")
+                  return
+                }
+
+                lifecycle.coroutineScope.launch {
+                    locationDisplay.dataSource.start().onSuccess {
+                        val position = mapView.locationDisplay.location.value!!.position;
+
+                        val location = AGMLViewPoint(
+                            longitude = position.y,
+                            latitude = position.x,
+                            scale = position.z!!
+                        )
+
+                        result.success(Gson().toJson(location))
+                    }.onFailure {
+                        result.error("FAILED", "Error in /getLocation", "locationDisplay.dataSource.start()")
+                    }
+                }
+            }
+            "/getLocation9377AndSetPoint" -> {
+                if(!isStartedLocation) {
+                  result.error("FAILED", "Error in isStartedLocation, may be is null", "")
+                  return
+                }
+
+                lifecycle.coroutineScope.launch {
+                    locationDisplay.dataSource.start().onSuccess {
+                        val position = mapView.locationDisplay.location.value!!.position;
+
+                        val point = GeometryEngine.projectOrNull(position, SpatialReference(9377)) as Point
+
+                        val z = if(position.z != null) {
+                            point.z
+                        } else {
+                            1000.0
+                        }
+
+                        val location = AGMLViewPoint(
+                            longitude = point.y,
+                            latitude = point.x,
+                            scale = z!!
+                        )
+
+                        try {
+                            val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.red, 20f)
+
+                            val blueOutlineSymbol = SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.fromRgba(0, 0, 0), 3f)
+                            simpleMarkerSymbol.outline = blueOutlineSymbol
+
+                            val pointGraphic = Graphic(point, simpleMarkerSymbol)
+
+                            graphicsOverlay.graphics.add(pointGraphic)
+                        } catch (e: Exception) {
+                            println(e)
+                        }
+
+                        result.success(Gson().toJson(location))
+                    }.onFailure {
+                        result.error("FAILED", "Error in /getLocation", "locationDisplay.dataSource.start()")
+                    }
                 }
             }
 
