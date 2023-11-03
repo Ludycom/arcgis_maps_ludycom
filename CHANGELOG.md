@@ -5,3 +5,7 @@
 ## 0.0.4
 
 * The OAuth 2.0 type authentication function is included, a class is created to manage the authentication methods. A function for location capture and a function for location capture in wkid 9377 coordinate system and tip drawing in the same location are created.
+
+## 0.0.5
+
+* Added exception handling when downloading portal elements.

@@ -1,6 +1,7 @@
 package com.ludycom.arcgis_maps
 
 import android.content.Context
+import android.util.Log
 import com.arcgismaps.mapping.PortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLDownloadPortalItem
@@ -97,11 +98,18 @@ class AGMLDownloadFromPortal (private val context: Context) {
 
                         return aGMLDownloadPortalItem
                     }
+                }.onFailure {
+                    aGMLDownloadPortalItem.downloadStatus = AGMLDownloadStatusEnum.FAILED
+                    Log.e("ERROR IN kotlin.runCatching", it.message.toString())
                 }
+            }.onFailure {
+                aGMLDownloadPortalItem.downloadStatus = AGMLDownloadStatusEnum.FAILED
+                Log.e("ERROR IN portalItem.fetchData()", it.message.toString())
             }
+        }.onFailure {
+            aGMLDownloadPortalItem.downloadStatus = AGMLDownloadStatusEnum.FAILED
+            Log.e("ERROR IN portalItem.load()", it.message.toString())
         }
-
-        aGMLDownloadPortalItem.downloadStatus = AGMLDownloadStatusEnum.FAILED
         return aGMLDownloadPortalItem
     }
 }
