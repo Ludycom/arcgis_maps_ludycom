@@ -281,4 +281,5 @@ final agmlPortalItemList = [
   AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=15a7cbd3af1e47cfa5d2c6b93dc44fc2'),
   AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=68ec42517cdd439e81b036210483e8e7'),
   AGMLPortalItem(url: 'https://www.arcgis.com/home/item.html?id=260eb6535c824209964cf281766ebe43')
+
 ];

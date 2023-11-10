@@ -49,13 +49,25 @@ class _GenerateGeodatabaseReplicaFromFeaturePageState extends State<GenerateGeod
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                OutlinedButton(
-                    onPressed: () async {
-                      setState(() => isLoading = true);
-                      geodatabase = await agmlDownloadPortalItemManager.generateGeodatabaseReplicaFromFeatureService(agmlFeatureService);
-                      setState(() => isLoading = false);
-                    },
-                    child: const Text('Generate replica')
+                Column(
+                  children: [
+                    OutlinedButton(
+                        onPressed: () async {
+                          setState(() => isLoading = true);
+                          geodatabase = await agmlDownloadPortalItemManager.generateGeodatabaseReplicaFromFeatureService(agmlFeatureServicePortal);
+                          setState(() => isLoading = false);
+                        },
+                        child: const Text('Generate replica - Portal')
+                    ),
+                    OutlinedButton(
+                        onPressed: () async {
+                          setState(() => isLoading = true);
+                          geodatabase = await agmlDownloadPortalItemManager.generateGeodatabaseReplicaFromFeatureService(agmlFeatureServiceOnline);
+                          setState(() => isLoading = false);
+                        },
+                        child: const Text('Generate replica - ArcGIS Online')
+                    ),
+                  ],
                 ),
                 OutlinedButton(
                     onPressed: () async {
@@ -98,7 +110,11 @@ class _GenerateGeodatabaseReplicaFromFeaturePageState extends State<GenerateGeod
   }
 }
 
-final agmlFeatureService = AGMLFeatureService(
+final agmlFeatureServiceOnline = AGMLFeatureService(
+    url: 'https://services.arcgis.com/UxVKZtnb6p8rrswX/arcgis/rest/services/Pruebas_SYNC_18oct_WFL1/FeatureServer'
+);
+
+final agmlFeatureServicePortal = AGMLFeatureService(
     // url: 'https://services2.arcgis.com/ZQgQTuoyBrtmoGdP/ArcGIS/rest/services/canyonlands_roads_trails/FeatureServer'
-    url: 'https://services.arcgis.com/UxVKZtnb6p8rrswX/arcgis/rest/services/Pruebas_SYNC_WFL1/FeatureServer'
+    url: 'https://pliga-server.cvc.gov.co/arcgis/rest/services/PRUEBAS/Prueba_sync_tradi/FeatureServer'
 );

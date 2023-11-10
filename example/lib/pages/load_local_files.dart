@@ -32,7 +32,7 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
 
   @override
   void initState() {
-    AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
+    // AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
     super.initState();
   }
 
@@ -90,7 +90,9 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
                     onPressed: () {
                       mapController.loadMobileMapPackage(
                         AGMLMobileMapPackage(
-                          path: '/storage/emulated/0/Android/data/com.ludycom.arcgis_maps_example/files/Portal Items/260eb6535c824209964cf281766ebe43/SanFrancisco.mmpk',
+                          // path: '/storage/emulated/0/Android/data/com.ludycom.arcgis_maps_example/files/Portal Items/260eb6535c824209964cf281766ebe43/SanFrancisco.mmpk',
+                          // path: '/storage/emulated/0/Android/data/com.ludycom.arcgis_maps_example/files/Portal Items/0f9441926c0245c2bbd59419b91e5bc5/Mapa_Base_CVC.mmpk',
+                          path: '/storage/emulated/0/Android/data/com.ludycom.arcgis_maps_example/files/Portal Items/24df54d524ef43f9a559b4ae8232aaf3/Mapa_base_CVC.mmpk',
                           viewPoint: AGMLViewPoint(
                             latitude: 34.0772, 
                             longitude: -118.7989,
@@ -180,6 +182,16 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
                     onPressed: () async {
                       mapController.startLocation();
 
+                    },
+                  ),
+                  TextButton(
+                    style: const ButtonStyle(
+                      backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
+                    ),
+                    child: const Icon(Icons.circle, color: Colors.white),
+                    onPressed: () async {
+                      mapController.setPoint4326(AGMLViewPoint(latitude: 4.41761268, longitude: -76.07825769));
+                      mapController.setViewPoint4326(AGMLViewPoint(latitude: 4.41761268, longitude: -76.07825769));
                     },
                   ),
                 ],

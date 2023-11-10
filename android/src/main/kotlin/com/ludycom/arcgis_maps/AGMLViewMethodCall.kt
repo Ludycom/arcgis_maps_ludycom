@@ -386,6 +386,25 @@ class AGMLViewMethodCall(
                     )
                 }
             }
+            "/setViewPoint4326" -> {
+                val arguments = call.arguments as Map<*, *>
+                val aGMLViewPoint = Gson().fromJson(JSONObject(arguments).toString(), AGMLViewPoint::class.java)
+
+                val point = GeometryEngine.projectOrNull(
+                    Point(aGMLViewPoint.latitude, aGMLViewPoint.longitude, SpatialReference(4326)),
+                    SpatialReference(9377)
+                ) as Point
+
+                mapView.apply {
+                    setViewpoint(
+                        Viewpoint(
+                            point.x,
+                            point.y,
+                            aGMLViewPoint.scale
+                        )
+                    )
+                }
+            }
             "/startLocation" -> {
                 if(checkHavePermissions()) {
                     lifecycle.coroutineScope.launch {
@@ -461,6 +480,27 @@ class AGMLViewMethodCall(
                     }.onFailure {
                         result.error("FAILED", "Error in /getLocation", "locationDisplay.dataSource.start()")
                     }
+                }
+            }
+            "/setPoint4326" -> {
+                val arguments = call.arguments as Map<*, *>
+                val aGMLViewPoint = Gson().fromJson(JSONObject(arguments).toString(), AGMLViewPoint::class.java)
+
+                val point = GeometryEngine.projectOrNull(
+                    Point(aGMLViewPoint.latitude, aGMLViewPoint.longitude, SpatialReference(4326)),
+                    SpatialReference(9377)
+                ) as Point
+
+                try {
+                    val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.red, 20f)
+                    val blueOutlineSymbol = SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.fromRgba(5, 66, 96), 3f)
+                    simpleMarkerSymbol.outline = blueOutlineSymbol
+
+                    val pointGraphic = Graphic(point, simpleMarkerSymbol)
+
+                    graphicsOverlay.graphics.add(pointGraphic)
+                } catch (e: Exception) {
+                    println(e)
                 }
             }
             "/getLocation9377AndSetPoint" -> {

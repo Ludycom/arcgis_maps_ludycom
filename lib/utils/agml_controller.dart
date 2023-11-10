@@ -283,6 +283,15 @@ class AGMLMapController {
     }
   }
 
+  void setViewPoint4326(AGMLViewPoint viewPoint) {
+    const method = '/setViewPoint4326';
+    try {
+      _channel.invokeMethod(method, viewPoint.toJson());
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+    }
+  }
+
   void startLocation() {
     const method = '/startLocation';
     try {
@@ -352,5 +361,14 @@ class AGMLMapController {
     }
   }
 
+  void setPoint4326(AGMLViewPoint viewPoint) async {
+    const method = '/setPoint4326';
+    try {
+      _channel.invokeMethod(method, viewPoint.toJson());
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      return null;
+    }
+  }
 
 }
