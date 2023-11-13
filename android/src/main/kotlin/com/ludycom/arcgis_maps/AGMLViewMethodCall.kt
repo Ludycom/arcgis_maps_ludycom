@@ -390,16 +390,19 @@ class AGMLViewMethodCall(
                 val arguments = call.arguments as Map<*, *>
                 val aGMLViewPoint = Gson().fromJson(JSONObject(arguments).toString(), AGMLViewPoint::class.java)
 
-                val point = GeometryEngine.projectOrNull(
-                    Point(aGMLViewPoint.latitude, aGMLViewPoint.longitude, SpatialReference(4326)),
+                val point = Point(aGMLViewPoint.longitude, aGMLViewPoint.latitude, SpatialReference(4326))
+                    /*GeometryEngine.projectOrNull(
+                    Point(aGMLViewPoint.longitude, aGMLViewPoint.latitude, SpatialReference(4326)),
                     SpatialReference(9377)
                 ) as Point
+
+                     */
 
                 mapView.apply {
                     setViewpoint(
                         Viewpoint(
-                            point.x,
                             point.y,
+                            point.x,
                             aGMLViewPoint.scale
                         )
                     )
@@ -487,12 +490,12 @@ class AGMLViewMethodCall(
                 val aGMLViewPoint = Gson().fromJson(JSONObject(arguments).toString(), AGMLViewPoint::class.java)
 
                 val point = GeometryEngine.projectOrNull(
-                    Point(aGMLViewPoint.latitude, aGMLViewPoint.longitude, SpatialReference(4326)),
+                    Point(aGMLViewPoint.longitude, aGMLViewPoint.latitude, SpatialReference(4326)),
                     SpatialReference(9377)
                 ) as Point
 
                 try {
-                    val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.red, 20f)
+                    val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.cyan, 20f)
                     val blueOutlineSymbol = SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.fromRgba(5, 66, 96), 3f)
                     simpleMarkerSymbol.outline = blueOutlineSymbol
 
