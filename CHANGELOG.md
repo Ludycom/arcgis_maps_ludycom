@@ -9,3 +9,7 @@
 ## 0.0.5
 
 * Added exception handling when downloading portal elements.
+
+## 0.0.6
+
+* Point painting and viewpoint change function on map with coordinates in 4326.
