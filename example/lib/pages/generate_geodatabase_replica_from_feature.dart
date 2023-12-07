@@ -1,6 +1,9 @@
 
+import 'dart:convert';
+
 import 'package:arcgis_maps/entities/agml_geodatabase.dart';
 import 'package:arcgis_maps/entities/agml_params.dart';
+import 'package:arcgis_maps/entities/agml_selected_layer_arguments.dart';
 import 'package:arcgis_maps/entities/features/agml_feature_service.dart';
 import 'package:arcgis_maps/utils/agml_controller.dart';
 import 'package:arcgis_maps/utils/agml_download_portal_item_manager.dart';
@@ -101,6 +104,14 @@ class _GenerateGeodatabaseReplicaFromFeaturePageState extends State<GenerateGeod
               onMapCreated: (controller) => mapController = controller,
               onChangeMapLocalLayers: (layers) {
                 if(kDebugMode) print(layers);
+                mapController.setSelectedFeatureLayer(AGMLSelectedLayerArguments(
+                  layerId: layers.first.id!,
+                  maxResults: 1
+                ));
+              },
+              onLayerSelected: (attributesList) {
+                final jsonR = json.decode(attributesList.first);
+                print(jsonR);
               },
             ),
           )
@@ -115,6 +126,5 @@ final agmlFeatureServiceOnline = AGMLFeatureService(
 );
 
 final agmlFeatureServicePortal = AGMLFeatureService(
-    // url: 'https://services2.arcgis.com/ZQgQTuoyBrtmoGdP/ArcGIS/rest/services/canyonlands_roads_trails/FeatureServer'
-    url: 'https://pliga-server.cvc.gov.co/arcgis/rest/services/PRUEBAS/Prueba_sync_tradi/FeatureServer'
+    url: 'https://services2.arcgis.com/ZQgQTuoyBrtmoGdP/ArcGIS/rest/services/canyonlands_roads_trails/FeatureServer'
 );

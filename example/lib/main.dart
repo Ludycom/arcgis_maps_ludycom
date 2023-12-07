@@ -1,4 +1,5 @@
 import 'package:arcgis_maps_example/pages/generate_geodatabase_replica_from_feature.dart';
+import 'package:arcgis_maps_example/pages/set_points.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -61,7 +62,8 @@ class MyApp extends StatelessWidget {
         PageRoutesEnum.load_local_files.path: (context) => const LoadLocalFilesPage(),
         PageRoutesEnum.select_features_in_feature_layer.path: (context) => const SelectFeaturesInFeatureLayerPage(),
         PageRoutesEnum.manage_map.path: (context) => const ManageMapPage(),
-        PageRoutesEnum.generate_geodatabase_replica_from_feature_service.path: (context) => const GenerateGeodatabaseReplicaFromFeaturePage()
+        PageRoutesEnum.generate_geodatabase_replica_from_feature_service.path: (context) => const GenerateGeodatabaseReplicaFromFeaturePage(),
+        PageRoutesEnum.set_points.path: (context) => const SetPointsPage()
       },
     );
   }
@@ -104,9 +106,9 @@ class _HomePageState extends State<_HomePage> {
             onPressed: () {
               final authManager = AGMLAuthManager();
               final configs = AGMLOAuthUserConfigurations(
-                  clientId: dotenv.env['OAUTH_CLIENT_ID'] ?? '',
-                  portalUrl: dotenv.env['PORTAL_URL'] ?? '',
-                  redirectUrl: dotenv.env['OAUTH_REDIRECT_URI'] ?? ''
+                clientId: dotenv.env['OAUTH_CLIENT_ID'] ?? '',
+                portalUrl: dotenv.env['PORTAL_URL'] ?? '',
+                redirectUrl: dotenv.env['OAUTH_REDIRECT_URI'] ?? ''
               );
 
               try {
@@ -183,6 +185,13 @@ class _HomePageState extends State<_HomePage> {
                 leading: const Icon(Icons.back_hand_rounded),
                 title: const Text('Manage map'),
                 onTap: () => Navigator.of(context).pushNamed(PageRoutesEnum.manage_map.path),
+              ),
+            ),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.circle_rounded),
+                title: const Text('Set points'),
+                onTap: () => Navigator.of(context).pushNamed(PageRoutesEnum.set_points.path),
               ),
             ),
           ]

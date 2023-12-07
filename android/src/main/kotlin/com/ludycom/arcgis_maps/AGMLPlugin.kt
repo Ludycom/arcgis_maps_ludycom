@@ -146,39 +146,7 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         lifecycle!!.coroutineScope.launch {
           geoDatabasesSyncTask.load().onSuccess {
 
-            /*
-
-            val minScreenPoint = ScreenCoordinate(200.0, 200.0)
-            if(
-              geoDatabasesSyncTask.featureServiceInfo?.fullExtent?.width == null ||
-              geoDatabasesSyncTask.featureServiceInfo?.fullExtent?.height == null
-            ) {
-              result.error("LOAD_ERROR" ,"Error in .featureServiceInfo?.fullExtent?", "May be is null")
-              return@launch
-            }
-
-            val maxScreenPoint = ScreenCoordinate(
-              geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.width - 200.0,
-              geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.height - 200.0
-            )
-
-            val mapView = MapView(context!!)
-
-            val minPoint = mapView.screenToLocation(minScreenPoint)
-            val maxPoint = mapView.screenToLocation(maxScreenPoint)
-
-            if(minPoint == null || maxPoint == null) {
-              result.error("POINT_ERROR" ,"Error in minPoint == null || maxPoint == null", "May be is null")
-              return@launch
-            }
-
-            val envelope = Envelope(minPoint, maxPoint)
-            downloadArea.geometry = envelope
-
-             */
-
             val defaultParameters = geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters(
-              //downloadArea.geometry!!.extent
               geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!
             ).getOrElse { err ->
               result.error("LOAD_ERROR" ,"Error in geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters()", err.message)
@@ -206,18 +174,13 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
                 result.error("LOAD_ERROR" ,"Error in geoDatabasesSyncTask.load()", err.message)
                 return@launch
               }
-              //geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
+              geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
 
               result.success(gson.toJson(
                 AGMLGeodatabase(
                   path = geodatabase.path,
                   url = agmlFeatureService.url,
                   viewPoint = null
-                  //AGMLViewPoint(
-                  //  latitude = geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.center.y,
-                  //  longitude = geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!.center.x,
-                  //  scale = 4000.0
-                  //)
               )))
             }
           }.onFailure { err ->

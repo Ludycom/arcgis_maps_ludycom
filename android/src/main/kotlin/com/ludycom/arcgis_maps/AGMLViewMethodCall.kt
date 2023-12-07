@@ -40,6 +40,7 @@ import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLFeatureServiceLayer
 import com.ludycom.arcgis_maps.entities.agml.AGMLGeodatabase
 import com.ludycom.arcgis_maps.entities.agml.AGMLMobileMapPackage
+import com.ludycom.arcgis_maps.entities.agml.AGMLSelectedLayerArguments
 import com.ludycom.arcgis_maps.entities.agml.AGMLViewPoint
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -67,11 +68,11 @@ class AGMLViewMethodCall(
     private val methodChannel = MethodChannel(messenger, channel)
 
 
-    private suspend fun getSelectedFeatureLayer(featureLayer: FeatureLayer, screenCoordinate: ScreenCoordinate) {
+    private suspend fun getSelectedFeatureLayer(featureLayer: FeatureLayer, screenCoordinate: ScreenCoordinate, maxResults: Int) {
         featureLayer.clearSelection()
 
         val tolerance = 25.0
-        val identifyLayerResult = mapView.identifyLayer(featureLayer, screenCoordinate, tolerance, false, -1).onFailure {
+        val identifyLayerResult = mapView.identifyLayer(featureLayer, screenCoordinate, tolerance, false, maxResults).onFailure {
             Log.e("identifyLayerResult", "Select feature failed: " + it.message)
         }
 
@@ -104,13 +105,13 @@ class AGMLViewMethodCall(
         return tapEvent.screenCoordinate
     }
 
-    private fun setOnSingleTapConfirmedListener(layer: FeatureLayer) {
+    private fun setOnSingleTapConfirmedListener(layer: FeatureLayer, maxResults: Int) {
         mapView.apply {
             lifecycle.coroutineScope.launch {
                 onSingleTapConfirmed.flatMapConcat { tapEvent -> flow {
                     emit(getTapEventCoordinate(tapEvent))
                 }}.collect { coordinate ->
-                    getSelectedFeatureLayer(layer, coordinate)
+                    getSelectedFeatureLayer(layer, coordinate, maxResults)
                 }
             }
 
@@ -345,11 +346,13 @@ class AGMLViewMethodCall(
                 }
             }
             "/setSelectedFeatureLayer" -> {
-                val layerId = call.arguments as String
-                val featureLayer = mapView.map?.operationalLayers?. find { layerId == it.id }
+                val arguments = call.arguments as Map<*, *>
+                val agmlSelectedLayerArguments = Gson().fromJson(JSONObject(arguments).toString(), AGMLSelectedLayerArguments::class.java)
+
+                val featureLayer = mapView.map?.operationalLayers?. find { agmlSelectedLayerArguments.layerId == it.id }
 
                 if(featureLayer != null) {
-                    setOnSingleTapConfirmedListener(featureLayer as FeatureLayer)
+                    setOnSingleTapConfirmedListener(featureLayer as FeatureLayer, agmlSelectedLayerArguments.maxResults)
                     result.success("success");
                 } else {
                     result.success("failure");
@@ -391,12 +394,6 @@ class AGMLViewMethodCall(
                 val aGMLViewPoint = Gson().fromJson(JSONObject(arguments).toString(), AGMLViewPoint::class.java)
 
                 val point = Point(aGMLViewPoint.longitude, aGMLViewPoint.latitude, SpatialReference(4326))
-                    /*GeometryEngine.projectOrNull(
-                    Point(aGMLViewPoint.longitude, aGMLViewPoint.latitude, SpatialReference(4326)),
-                    SpatialReference(9377)
-                ) as Point
-
-                     */
 
                 mapView.apply {
                     setViewpoint(
@@ -544,6 +541,44 @@ class AGMLViewMethodCall(
                         }
 
                         result.success(Gson().toJson(location))
+                    }.onFailure {
+                        result.error("FAILED", "Error in /getLocation", "locationDisplay.dataSource.start()")
+                    }
+                }
+            }
+            "/setPointCurrentLocation" -> {
+                val arguments = call.arguments as Map<*, *>
+
+                val attributes = HashMap<String, Any?>()
+                for ((key, value) in arguments) {
+                    if (key is String && value != null) {
+                        attributes[key] = value
+                    }
+                }
+
+                if(!isStartedLocation) {
+                  result.error("FAILED", "Error in isStartedLocation, may be is null", "")
+                  return
+                }
+
+                lifecycle.coroutineScope.launch {
+                    locationDisplay.dataSource.start().onSuccess {
+                        val position = mapView.locationDisplay.location.value!!.position;
+                        val point = GeometryEngine.projectOrNull(position, SpatialReference(9377)) as Point
+
+                        try {
+                            val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.black, 20f)
+
+                            val blueOutlineSymbol = SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.fromRgba(0, 0, 0), 3f)
+                            simpleMarkerSymbol.outline = blueOutlineSymbol
+
+                            val pointGraphic = Graphic(point, simpleMarkerSymbol)
+                            pointGraphic.attributes.putAll(attributes);
+
+                            graphicsOverlay.graphics.add(pointGraphic)
+                        } catch (e: Exception) {
+                            println(e)
+                        }
                     }.onFailure {
                         result.error("FAILED", "Error in /getLocation", "locationDisplay.dataSource.start()")
                     }

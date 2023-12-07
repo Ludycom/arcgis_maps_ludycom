@@ -8,24 +8,23 @@ import 'package:arcgis_maps/utils/agml_controller.dart';
 
 
 
-class ManageMapPage extends StatefulWidget {
+class SetPointsPage extends StatefulWidget {
 
-  const ManageMapPage({super.key});
+  const SetPointsPage({super.key});
 
   @override
-  State<ManageMapPage> createState() => _ManageMapPageState();
+  State<SetPointsPage> createState() => _SetPointsPageState();
 }
 
-class _ManageMapPageState extends State<ManageMapPage> {
+class _SetPointsPageState extends State<SetPointsPage> {
 
   late final AGMLMapController mapController;
 
   @override
   void initState() {
-    // AGMLAuthManager().setApiKey(dotenv.env['API_KEY'] ?? '');
     super.initState();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,40 +76,13 @@ class _ManageMapPageState extends State<ManageMapPage> {
                     style: const ButtonStyle(
                       backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
                     ),
-                    child: const Icon(Icons.location_disabled_rounded, color: Colors.white),
-                    onPressed: () => mapController.startLocation(),
-                  ),
-                  TextButton(
-                    style: const ButtonStyle(
-                      backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
+                    child: const Icon(Icons.circle_rounded, color: Colors.white),
+                    onPressed: () => mapController.setPointCurrentLocation(
+                      attributes: {
+                        "test": "test"
+                      }
                     ),
-                    child: const Icon(Icons.my_location_rounded, color: Colors.white),
-                    onPressed: () => mapController.autoPaneModeCenterLocation(),
-                  ),
-                  TextButton(
-                    style: const ButtonStyle(
-                      backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
-                    ),
-                    child: const Icon(Icons.navigation_rounded, color: Colors.white),
-                    onPressed: () => mapController.autoPaneModeCompassNavigation(),
-                  ),
-                  TextButton(
-                    style: const ButtonStyle(
-                      backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
-                    ),
-                    child: const Icon(Icons.compass_calibration_rounded, color: Colors.white),
-                    onPressed: () => mapController.autoPaneModeCompassNavigation(),
-                  ),
-                  TextButton(
-                    style: const ButtonStyle(
-                      backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
-                    ),
-                    child: const Icon(Icons.location_history, color: Colors.white),
-                    onPressed: () async {
-                      final location = await mapController.getLocation();
-                      if(kDebugMode) print(location);
-                    },
-                  ),
+                  )
                 ],
               ),
             ),

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:arcgis_maps/entities/agml_geodatabase.dart';
 import 'package:arcgis_maps/entities/agml_mobile_map_package.dart';
+import 'package:arcgis_maps/entities/agml_selected_layer_arguments.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 
@@ -195,7 +196,7 @@ class AGMLMapController {
     const method = '/loadGeoPackageFeatureLayer';
 
     try {
-      final channelResponse = await _channel.invokeMethod(method, agmlLocalGeodatabase.toMap()) as String;
+      final channelResponse = await _channel.invokeMethod(method, agmlLocalGeodatabase.toJson()) as String;
       onLoadLocalFeatureChannelResponse(agmlLocalGeodatabase, channelResponse);
     } on PlatformException catch(e) {
       if(kDebugMode) print(e);
@@ -206,7 +207,7 @@ class AGMLMapController {
     const method = '/loadShapefileFeatureLayer';
 
     try {
-      final channelResponse = await _channel.invokeMethod(method, agmlLocalShapefile.toMap()) as String;
+      final channelResponse = await _channel.invokeMethod(method, agmlLocalShapefile.toJson()) as String;
       onLoadLocalFeatureChannelResponse(agmlLocalShapefile, channelResponse);
     } on PlatformException catch(e) {
       if(kDebugMode) print(e);
@@ -240,11 +241,11 @@ class AGMLMapController {
 
   //? Selection Feature layer
 
-  Future<void> setSelectedFeatureLayer(String layerId) async {
+  Future<void> setSelectedFeatureLayer(AGMLSelectedLayerArguments arguments) async {
     const method = '/setSelectedFeatureLayer';
 
     try {
-      final channelResponse = await _channel.invokeMethod(method, layerId);
+      final channelResponse = await _channel.invokeMethod(method, arguments.toJson());
       if (kDebugMode) {
         print(channelResponse);
       }
@@ -365,6 +366,16 @@ class AGMLMapController {
     const method = '/setPoint4326';
     try {
       _channel.invokeMethod(method, viewPoint.toJson());
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      return null;
+    }
+  }
+
+  void setPointCurrentLocation({Map<String, dynamic>? attributes}) async {
+    const method = '/setPointCurrentLocation';
+    try {
+      _channel.invokeMethod(method, attributes);
     } on PlatformException catch (e) {
       if(kDebugMode) print(e);
       return null;

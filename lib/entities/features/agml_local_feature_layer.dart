@@ -13,7 +13,7 @@ class AGMLLocalFeatureLayer extends AbstractAGMLFeatureLayer {
     super.viewPoint
   });
 
-  Map<String, dynamic> toMap() => {
+  Map<String, dynamic> toJson() => {
     "id": id,
     "path": path,
     "viewPoint": viewPoint?.toJson()

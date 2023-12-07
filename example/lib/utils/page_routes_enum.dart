@@ -9,7 +9,8 @@ enum PageRoutesEnum {
   load_local_files,
   select_features_in_feature_layer,
   manage_map,
-  generate_geodatabase_replica_from_feature_service
+  generate_geodatabase_replica_from_feature_service,
+  set_points
 }
 
 extension PageRoutesEnumExtension on PageRoutesEnum {
@@ -24,6 +25,7 @@ extension PageRoutesEnumExtension on PageRoutesEnum {
       case PageRoutesEnum.select_features_in_feature_layer: return "/select_features_in_feature_layer";
       case PageRoutesEnum.manage_map: return "/manage_map";
       case PageRoutesEnum.generate_geodatabase_replica_from_feature_service: return "/generate_geodatabase_replica_from_feature_service";
+      case PageRoutesEnum.set_points: return "/set_points";
     }
   }
 }

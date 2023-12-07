@@ -1,3 +1,4 @@
+import 'package:arcgis_maps/entities/agml_selected_layer_arguments.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_json_view/flutter_json_view.dart';
@@ -162,7 +163,9 @@ class _SelectFeaturesInFeatureLayerPageState extends State<SelectFeaturesInFeatu
                               setState(() {
                                 selectedLayerId = layer.id ?? '';
                               });
-                              mapController.setSelectedFeatureLayer(selectedLayerId);
+                              mapController.setSelectedFeatureLayer(AGMLSelectedLayerArguments(
+                                layerId: selectedLayerId
+                              ));
                             }
                           },
                           child: Card(
@@ -180,7 +183,9 @@ class _SelectFeaturesInFeatureLayerPageState extends State<SelectFeaturesInFeatu
                                       setState(() {
                                         selectedLayerId = layer.id ?? '';
                                       });
-                                      mapController.setSelectedFeatureLayer(selectedLayerId);
+                                      mapController.setSelectedFeatureLayer(AGMLSelectedLayerArguments(
+                                          layerId: selectedLayerId
+                                      ));
                                     } 
                                   },
                                 )

@@ -13,3 +13,7 @@
 ## 0.0.6
 
 * Point painting and viewpoint change function on map with coordinates in 4326.
+ 
+## 0.0.7
+
+* Point creation with attributes and maxResults for layer selection
