@@ -83,17 +83,12 @@ class AGMLViewMethodCall(
 
                 val jsonSelectedLayers = mutableListOf<String>()
                 val gson = Gson()
+
                 features.forEach { item ->
                     jsonSelectedLayers.add(gson.toJson(item.attributes))
-//                    if(item.geometry != null) {
-//                        mapView.setViewpoint(
-//                            Viewpoint(item.geometry!!.extent)
-//                        )
-//                    }
-                    if(features.size == jsonSelectedLayers.size) {
-                        methodChannel.invokeMethod("/getSelectedFeatureInFeatureLayer", jsonSelectedLayers)
-                    }
                 }
+                
+                methodChannel.invokeMethod("/getSelectedFeatureInFeatureLayer", jsonSelectedLayers)
             }
             onFailure {
                 Log.e("getSelectedFeatureLayer", "Select feature failed: " + it.message)
