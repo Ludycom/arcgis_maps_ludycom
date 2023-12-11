@@ -87,7 +87,7 @@ class AGMLViewMethodCall(
                 features.forEach { item ->
                     jsonSelectedLayers.add(gson.toJson(item.attributes))
                 }
-                
+
                 methodChannel.invokeMethod("/getSelectedFeatureInFeatureLayer", jsonSelectedLayers)
             }
             onFailure {

@@ -17,3 +17,7 @@
 ## 0.0.7
 
 * Point creation with attributes and maxResults for layer selection
+ 
+## 0.0.8
+
+* adjustment in for layer selection
