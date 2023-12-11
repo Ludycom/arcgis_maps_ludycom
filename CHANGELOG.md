@@ -21,3 +21,7 @@
 ## 0.0.8
 
 * adjustment in for layer selection
+ 
+## 0.0.9
+
+* Upgrade ArcGIS SDK Version
