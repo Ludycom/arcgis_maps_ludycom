@@ -5,6 +5,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.coroutineScope
 import com.arcgismaps.data.Geodatabase
 import com.arcgismaps.geometry.Envelope
+import com.arcgismaps.geometry.GeometryEngine
 import com.arcgismaps.geometry.Point
 import com.arcgismaps.geometry.SpatialReference
 import com.arcgismaps.mapping.PortalItem
@@ -16,6 +17,7 @@ import com.arcgismaps.tasks.geodatabase.SyncDirection
 import com.arcgismaps.tasks.geodatabase.SyncGeodatabaseParameters
 import com.arcgismaps.tasks.geodatabase.SyncLayerOption
 import com.google.gson.Gson
+import com.ludycom.arcgis_maps.entities.agml.AGMLChangeSpacialReferenceParams
 import com.ludycom.arcgis_maps.entities.agml.AGMLDownloadPortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLGeodatabase
 import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
@@ -212,6 +214,27 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             println(result)
           }
         }
+      }
+      "/changeSpacialReference" -> {
+        val arguments = call.arguments as Map<*, *>
+        val changeSpacialReferenceParams = Gson().fromJson(JSONObject(arguments).toString(), AGMLChangeSpacialReferenceParams::class.java)
+
+
+        val point = GeometryEngine.projectOrNull(
+          Point(
+            changeSpacialReferenceParams.point.longitude, changeSpacialReferenceParams.point.latitude, SpatialReference(changeSpacialReferenceParams.fromSpacialReference)),
+            SpatialReference(changeSpacialReferenceParams.toSpacialReference)
+          ) as Point
+
+        val gson = Gson()
+
+        result.success(gson.toJson(
+          AGMLViewPoint(
+            latitude = point.y,
+            longitude = point.x,
+            scale = 3000.0
+          )
+        ))
       }
     }
   }

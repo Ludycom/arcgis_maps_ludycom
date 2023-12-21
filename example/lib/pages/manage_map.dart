@@ -107,7 +107,7 @@ class _ManageMapPageState extends State<ManageMapPage> {
                     ),
                     child: const Icon(Icons.location_history, color: Colors.white),
                     onPressed: () async {
-                      final location = await mapController.getLocation();
+                      final location = await mapController.getLocation4326();
                       if(kDebugMode) print(location);
                     },
                   ),

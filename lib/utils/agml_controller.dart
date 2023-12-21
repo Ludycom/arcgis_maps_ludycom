@@ -56,28 +56,28 @@ class AGMLMapController {
 
 
   void onLoadServiceFeatureChannelResponse(
-    AGMLFeatureServiceLayer layer, 
-    String response
-  ) {
+      AGMLFeatureServiceLayer layer,
+      String response
+      ) {
     if(response != AGMLChannelStatusResponseEnum.failure.name) {
       _mapServiceLayers.add(AGMLFeatureServiceLayer(
-        id: response,
-        url: layer.url,
-        viewPoint: layer.viewPoint
+          id: response,
+          url: layer.url,
+          viewPoint: layer.viewPoint
       ));
       _onChangedMapServiceLayersStreamController.add(_mapServiceLayers);
     }
   }
 
   void onLoadLocalFeatureChannelResponse(
-    AGMLLocalFeatureLayer layer, 
-    String response
-  ) {
+      AGMLLocalFeatureLayer layer,
+      String response
+      ) {
     if(response != AGMLChannelStatusResponseEnum.failure.name) {
       _mapLocalLayers.add(AGMLLocalFeatureLayer(
-        id: response,
-        path: layer.path,
-        viewPoint: layer.viewPoint
+          id: response,
+          path: layer.path,
+          viewPoint: layer.viewPoint
       ));
       _onChangedMapLocalLayersStreamController.add(_mapLocalLayers);
     }
@@ -91,9 +91,9 @@ class AGMLMapController {
   }
 
   void onRemoveFeatureChannelResponse(
-    AbstractAGMLFeatureLayer layer,
-    String response
-  ) {
+      AbstractAGMLFeatureLayer layer,
+      String response
+      ) {
     if(response == AGMLChannelStatusResponseEnum.success.name) {
       if(layer.runtimeType == AGMLLocalFeatureLayer) {
         _mapServiceLayers.remove(layer);
@@ -129,11 +129,11 @@ class AGMLMapController {
     try {
       final channelResponse = await _channel.invokeMethod(method, agmlPortalItem.toJson()) as String;
       onLoadServiceFeatureChannelResponse(
-        AGMLFeatureServiceLayer(
-          url: agmlPortalItem.url,
-          viewPoint: agmlPortalItem.viewPoint
-        ),
-        channelResponse
+          AGMLFeatureServiceLayer(
+              url: agmlPortalItem.url,
+              viewPoint: agmlPortalItem.viewPoint
+          ),
+          channelResponse
       );
     } on PlatformException catch(e) {
       if(kDebugMode) print(e);
@@ -146,11 +146,11 @@ class AGMLMapController {
     try {
       final channelResponse = await _channel.invokeMethod(method, agmlArcGISOnlinePortalItem.toMap()) as String;
       onLoadServiceFeatureChannelResponse(
-        AGMLFeatureServiceLayer(
-          url: 'https://www.arcgis.com/apps/mapviewer/index.html?layers=${agmlArcGISOnlinePortalItem.itemID}',
-          viewPoint: agmlArcGISOnlinePortalItem.viewPoint
-        ),
-        channelResponse
+          AGMLFeatureServiceLayer(
+              url: 'https://www.arcgis.com/apps/mapviewer/index.html?layers=${agmlArcGISOnlinePortalItem.itemID}',
+              viewPoint: agmlArcGISOnlinePortalItem.viewPoint
+          ),
+          channelResponse
       );
     } on PlatformException catch(e) {
       if(kDebugMode) print(e);
@@ -338,8 +338,20 @@ class AGMLMapController {
     }
   }
 
-  Future<AGMLViewPoint?> getLocation() async {
-    const method = '/getLocation';
+  Future<AGMLViewPoint?> getLocation4326() async {
+    const method = '/getLocation4326';
+    try {
+      final response = await _channel.invokeMethod(method) as String;
+      final location = AGMLViewPoint.fromJson(jsonDecode(response));
+      return location;
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      return null;
+    }
+  }
+
+  Future<AGMLViewPoint?> getLocation9377() async {
+    const method = '/getLocation9377';
     try {
       final response = await _channel.invokeMethod(method) as String;
       final location = AGMLViewPoint.fromJson(jsonDecode(response));
@@ -364,6 +376,16 @@ class AGMLMapController {
 
   void setPoint4326(AGMLViewPoint viewPoint) async {
     const method = '/setPoint4326';
+    try {
+      _channel.invokeMethod(method, viewPoint.toJson());
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      return null;
+    }
+  }
+
+  void setPoint9377(AGMLViewPoint viewPoint) async {
+    const method = '/setPoint9377';
     try {
       _channel.invokeMethod(method, viewPoint.toJson());
     } on PlatformException catch (e) {

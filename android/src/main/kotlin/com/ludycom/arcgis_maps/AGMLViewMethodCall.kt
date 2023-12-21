@@ -76,24 +76,33 @@ class AGMLViewMethodCall(
             Log.e("identifyLayerResult", "Select feature failed: " + it.message)
         }
 
-        identifyLayerResult.apply {
-            onSuccess { identifyLayerResult ->
-                val features = identifyLayerResult.geoElements.filterIsInstance<Feature>()
-                featureLayer.selectFeatures(features)
+        identifyLayerResult.onSuccess { identifyLayerResult ->
+            val features = identifyLayerResult.geoElements.filterIsInstance<Feature>()
+            featureLayer.selectFeatures(features)
 
-                val jsonSelectedLayers = mutableListOf<String>()
-                val gson = Gson()
+            val jsonSelectedLayers = mutableListOf<String>()
+            val gson = Gson()
 
-                features.forEach { item ->
-                    jsonSelectedLayers.add(gson.toJson(item.attributes))
+            features.forEach { feature ->
+                val attributes = feature.attributes
+                val attributeMap = mutableMapOf<String, Any?>()
+
+                attributes.keys.forEach { key ->
+                    attributeMap[key] = attributes[key]
                 }
 
-                methodChannel.invokeMethod("/getSelectedFeatureInFeatureLayer", jsonSelectedLayers)
+                val json = gson.toJson(attributeMap)
+
+                jsonSelectedLayers.add(json)
             }
-            onFailure {
-                Log.e("getSelectedFeatureLayer", "Select feature failed: " + it.message)
-            }
+
+            methodChannel.invokeMethod("/getSelectedFeatureInFeatureLayer", jsonSelectedLayers)
         }
+
+        identifyLayerResult.onFailure {
+            Log.e("getSelectedFeatureLayer", "Select feature failed: " + it.message)
+        }
+
     }
 
     private fun getTapEventCoordinate(tapEvent: SingleTapConfirmedEvent): ScreenCoordinate {
@@ -328,6 +337,7 @@ class AGMLViewMethodCall(
             }
             "/removeAllFeatureLayers" -> {
                 mapView.map?.operationalLayers?.clear()
+                graphicsOverlay.graphics.clear()
                 result.success("success");
             }
             "/removeFeatureLayer" -> {
@@ -455,7 +465,7 @@ class AGMLViewMethodCall(
                     )
                 }
             }
-            "/getLocation" -> {
+            "/getLocation4326" -> {
                 if(!isStartedLocation) {
                   result.error("FAILED", "Error in isStartedLocation, may be is null", "")
                   return
@@ -477,6 +487,33 @@ class AGMLViewMethodCall(
                     }
                 }
             }
+            "/getLocation9377" -> {
+                if(!isStartedLocation) {
+                  result.error("FAILED", "Error in isStartedLocation, may be is null", "")
+                  return
+                }
+
+                lifecycle.coroutineScope.launch {
+                    locationDisplay.dataSource.start().onSuccess {
+                        val position = mapView.locationDisplay.location.value!!.position;
+
+                        val point = GeometryEngine.projectOrNull(
+                            Point(position.x, position.y, SpatialReference(4326)),
+                            SpatialReference(9377)
+                        ) as Point
+
+                        val location = AGMLViewPoint(
+                            longitude = point.x,
+                            latitude = point.y,
+                            scale = 3000.0
+                        )
+
+                        result.success(Gson().toJson(location))
+                    }.onFailure {
+                        result.error("FAILED", "Error in /getLocation", "locationDisplay.dataSource.start()")
+                    }
+                }
+            }
             "/setPoint4326" -> {
                 val arguments = call.arguments as Map<*, *>
                 val aGMLViewPoint = Gson().fromJson(JSONObject(arguments).toString(), AGMLViewPoint::class.java)
@@ -485,6 +522,24 @@ class AGMLViewMethodCall(
                     Point(aGMLViewPoint.longitude, aGMLViewPoint.latitude, SpatialReference(4326)),
                     SpatialReference(9377)
                 ) as Point
+
+                try {
+                    val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.cyan, 20f)
+                    val blueOutlineSymbol = SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.fromRgba(5, 66, 96), 3f)
+                    simpleMarkerSymbol.outline = blueOutlineSymbol
+
+                    val pointGraphic = Graphic(point, simpleMarkerSymbol)
+
+                    graphicsOverlay.graphics.add(pointGraphic)
+                } catch (e: Exception) {
+                    println(e)
+                }
+            }
+            "/setPoint9377" -> {
+                val arguments = call.arguments as Map<*, *>
+                val aGMLViewPoint = Gson().fromJson(JSONObject(arguments).toString(), AGMLViewPoint::class.java)
+
+                val point = Point(aGMLViewPoint.longitude, aGMLViewPoint.latitude, SpatialReference(9377))
 
                 try {
                     val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.cyan, 20f)
@@ -542,12 +597,17 @@ class AGMLViewMethodCall(
                 }
             }
             "/setPointCurrentLocation" -> {
-                val arguments = call.arguments as Map<*, *>
+                var arguments: Map<*, *>? = null
+
+                if(call.arguments != null) {
+                    arguments = call.arguments as Map<*, *>
+                }
 
                 val attributes = HashMap<String, Any?>()
-                for ((key, value) in arguments) {
-                    if (key is String && value != null) {
-                        attributes[key] = value
+
+                if(arguments != null) {
+                    for (argument in arguments) {
+                        attributes[argument.key.toString()] = argument.value
                     }
                 }
 
@@ -562,9 +622,8 @@ class AGMLViewMethodCall(
                         val point = GeometryEngine.projectOrNull(position, SpatialReference(9377)) as Point
 
                         try {
-                            val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.black, 20f)
-
-                            val blueOutlineSymbol = SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.fromRgba(0, 0, 0), 3f)
+                            val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.cyan, 20f)
+                            val blueOutlineSymbol = SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.fromRgba(5, 66, 96), 3f)
                             simpleMarkerSymbol.outline = blueOutlineSymbol
 
                             val pointGraphic = Graphic(point, simpleMarkerSymbol)
