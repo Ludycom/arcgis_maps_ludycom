@@ -73,8 +73,8 @@ internal class AGMLMapView(
         }
 
         mapView.graphicsOverlays.add(graphicsOverlay)
-
         mapView.selectionProperties.color = Color.red
+
 
         val aGMLViewMethodCall = AGMLViewMethodCall(
             context,

@@ -38,8 +38,6 @@ class AGMLMapController {
   final StreamController<List<AGMLLocalFeatureLayer>> _onChangedMapLocalLayersStreamController = StreamController();
   StreamController<List<AGMLLocalFeatureLayer>> get onChangedMapLocalLayersStreamController => _onChangedMapLocalLayersStreamController;
 
-
-
   AGMLMapController(int id) {
     _channel = MethodChannel('plugins.flutter.io/arcgis_maps:$id');
 
@@ -75,9 +73,9 @@ class AGMLMapController {
       ) {
     if(response != AGMLChannelStatusResponseEnum.failure.name) {
       _mapLocalLayers.add(AGMLLocalFeatureLayer(
-          id: response,
-          path: layer.path,
-          viewPoint: layer.viewPoint
+        id: response,
+        path: layer.path,
+        viewPoint: layer.viewPoint
       ));
       _onChangedMapLocalLayersStreamController.add(_mapLocalLayers);
     }
@@ -401,6 +399,18 @@ class AGMLMapController {
     } on PlatformException catch (e) {
       if(kDebugMode) print(e);
       return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> queryData(String queryString) async {
+    const method = '/queryData';
+    try {
+      final response = await _channel.invokeMethod(method, queryString);
+      final data = json.decode(response);
+      return data;
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      return {};
     }
   }
 

@@ -67,11 +67,22 @@ class _AGMLMapState extends State<AGMLMap> {
   Widget build(BuildContext context) {
 
     if(Platform.isAndroid) {
+      // return AndroidView(
+      //   viewType: _viewType,
+      //   creationParams: widget.creationParams.toMap(),
+      //   layoutDirection: TextDirection.ltr,
+      //   creationParamsCodec: const StandardMessageCodec(),
+      //   onPlatformViewCreated: (id) {
+      //     _controller = AGMLMapController(id);
+      //     initMethodChannel(id);
+      //   },
+      // );
+
       return PlatformViewLink(
         surfaceFactory: (context, controller) {
           return AndroidViewSurface(
             controller: controller as AndroidViewController,
-            hitTestBehavior: PlatformViewHitTestBehavior.opaque, 
+            hitTestBehavior: PlatformViewHitTestBehavior.opaque,
             gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{}
           );
         },
@@ -81,7 +92,7 @@ class _AGMLMapState extends State<AGMLMap> {
 
           return PlatformViewsService.initExpensiveAndroidView(
             id: params.id,
-            viewType: _viewType, 
+            viewType: _viewType,
             layoutDirection: TextDirection.ltr,
             creationParams: widget.creationParams.toMap(),
             creationParamsCodec: const StandardMessageCodec(),

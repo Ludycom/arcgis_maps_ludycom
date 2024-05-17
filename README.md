@@ -128,3 +128,8 @@ Not available
 ![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/download_portalitem_0.jpg)
 ![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/download_portalitem_1.jpg)
 ![App Screenshot](https://github.com/Ludycom/arcgis_maps_ludycom/blob/Main/example/demo_assets/download_portalitem_2.jpg)
+
+
+### Errors
+
+Crash on double tap in AGMLMap when AGMLMap is a child of GestureDetector

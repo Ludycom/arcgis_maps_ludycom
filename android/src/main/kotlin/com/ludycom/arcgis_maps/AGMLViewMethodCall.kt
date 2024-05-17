@@ -11,8 +11,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.coroutineScope
 import com.arcgismaps.Color
 import com.arcgismaps.data.Feature
+import com.arcgismaps.data.FeatureQueryResult
 import com.arcgismaps.data.GeoPackage
 import com.arcgismaps.data.Geodatabase
+import com.arcgismaps.data.QueryParameters
 import com.arcgismaps.data.ServiceFeatureTable
 import com.arcgismaps.data.ShapefileFeatureTable
 import com.arcgismaps.geometry.GeometryEngine
@@ -54,6 +56,7 @@ import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.withTimeoutOrNull
 import java.lang.Exception
+import java.util.Locale
 
 
 class AGMLViewMethodCall(
@@ -638,7 +641,38 @@ class AGMLViewMethodCall(
                     }
                 }
             }
+            "/queryData" -> {
+                val queryString = call.arguments as String
 
+                val mapLayers = mapView.map?.operationalLayers;
+                if(mapLayers.isNullOrEmpty()) return result.error("FAILED", "Error in /queryData", "operationalLayers is empty");
+
+                val featureLayer = mapLayers.last() as FeatureLayer
+
+                featureLayer.clearSelection()
+                val queryParameters = QueryParameters().apply {
+                    whereClause = queryString
+                }
+
+                lifecycle.coroutineScope.launch {
+                    val featureQueryResult = featureLayer.featureTable?.queryFeatures(queryParameters)?.getOrElse {
+                        result.error("FAILED", "Error in /queryData", "featureLayer.featureTable?.queryFeatures(queryParameters).getOrElse")
+                    } as FeatureQueryResult?
+
+                    val feature = featureQueryResult?.firstOrNull()
+                    if (feature != null) {
+                        featureLayer.selectFeature(feature)
+                        val envelope = feature.geometry?.extent
+                            ?: return@launch result.error("FAILED", "Error in /queryData", "Error retrieving geometry extent")
+
+                        mapView.setViewpoint(Viewpoint(envelope))
+                        result.success(Gson().toJson(feature.attributes))
+                    } else {
+                        result.success("No data")
+                    }
+                }
+
+            }
             else -> result.notImplemented()
         }
     }
