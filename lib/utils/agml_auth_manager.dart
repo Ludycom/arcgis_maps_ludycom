@@ -8,5 +8,4 @@ class AGMLAuthManager {
   void setApiKey(String apiKey) {
     authApi.setApiKey(apiKey);
   }
-
 }

@@ -10,7 +10,8 @@ enum PageRoutesEnum {
   select_features_in_feature_layer,
   manage_map,
   generate_geodatabase_replica_from_feature_service,
-  set_points
+  set_points,
+  editor_map,
 }
 
 extension PageRoutesEnumExtension on PageRoutesEnum {
@@ -26,6 +27,7 @@ extension PageRoutesEnumExtension on PageRoutesEnum {
       case PageRoutesEnum.manage_map: return "/manage_map";
       case PageRoutesEnum.generate_geodatabase_replica_from_feature_service: return "/generate_geodatabase_replica_from_feature_service";
       case PageRoutesEnum.set_points: return "/set_points";
+      case PageRoutesEnum.editor_map: return "/editor_map";
     }
   }
 }

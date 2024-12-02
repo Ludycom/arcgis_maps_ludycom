@@ -17,14 +17,21 @@ import com.arcgismaps.data.Geodatabase
 import com.arcgismaps.data.QueryParameters
 import com.arcgismaps.data.ServiceFeatureTable
 import com.arcgismaps.data.ShapefileFeatureTable
+import com.arcgismaps.geometry.Geometry
+import com.arcgismaps.geometry.GeometryBuilder
 import com.arcgismaps.geometry.GeometryEngine
+import com.arcgismaps.geometry.Multipoint
 import com.arcgismaps.geometry.Point
+import com.arcgismaps.geometry.Polygon
+import com.arcgismaps.geometry.Polyline
 import com.arcgismaps.geometry.SpatialReference
 import com.arcgismaps.location.LocationDisplayAutoPanMode
 import com.arcgismaps.mapping.MobileMapPackage
 import com.arcgismaps.mapping.PortalItem
 import com.arcgismaps.mapping.Viewpoint
 import com.arcgismaps.mapping.layers.FeatureLayer
+import com.arcgismaps.mapping.symbology.SimpleFillSymbol
+import com.arcgismaps.mapping.symbology.SimpleFillSymbolStyle
 import com.arcgismaps.mapping.symbology.SimpleLineSymbol
 import com.arcgismaps.mapping.symbology.SimpleLineSymbolStyle
 import com.arcgismaps.mapping.symbology.SimpleMarkerSymbol
@@ -34,16 +41,18 @@ import com.arcgismaps.mapping.view.GraphicsOverlay
 import com.arcgismaps.mapping.view.MapView
 import com.arcgismaps.mapping.view.ScreenCoordinate
 import com.arcgismaps.mapping.view.SingleTapConfirmedEvent
+import com.arcgismaps.mapping.view.geometryeditor.GeometryEditor
 import com.arcgismaps.portal.Portal
 import com.google.gson.Gson
 import com.ludycom.arcgis_maps.entities.agml.AGMLArcGISOnlinePortalItem
-import com.ludycom.arcgis_maps.entities.agml.AGMLLocalFeatureLayer
-import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLFeatureServiceLayer
 import com.ludycom.arcgis_maps.entities.agml.AGMLGeodatabase
+import com.ludycom.arcgis_maps.entities.agml.AGMLLocalFeatureLayer
 import com.ludycom.arcgis_maps.entities.agml.AGMLMobileMapPackage
+import com.ludycom.arcgis_maps.entities.agml.AGMLPortalItem
 import com.ludycom.arcgis_maps.entities.agml.AGMLSelectedLayerArguments
 import com.ludycom.arcgis_maps.entities.agml.AGMLViewPoint
+import com.ludycom.arcgis_maps.utils.AGMLGeometryTypeEnum
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -51,12 +60,10 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
-import kotlinx.coroutines.withTimeoutOrNull
-import java.lang.Exception
-import java.util.Locale
 
 
 class AGMLViewMethodCall(
@@ -65,10 +72,31 @@ class AGMLViewMethodCall(
     channel: String,
     private val lifecycle: Lifecycle,
     private val mapView: MapView,
-    private val graphicsOverlay: GraphicsOverlay
+    private val graphicsOverlay: GraphicsOverlay,
+    private val geometryEditor: GeometryEditor
 ) {
-
     private val methodChannel = MethodChannel(messenger, channel)
+
+    private val pointSymbol: SimpleMarkerSymbol by lazy {
+        SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle,
+            Color(ContextCompat.getColor(context, R.color.point_symbol_color)),
+            20f)
+    }
+    private val lineSymbol: SimpleLineSymbol by lazy {
+        SimpleLineSymbol(
+            SimpleLineSymbolStyle.Solid,
+            Color(ContextCompat.getColor(context, R.color.line_symbol_color)),
+            4f
+        )
+    }
+    private val fillSymbol: SimpleFillSymbol by lazy {
+        SimpleFillSymbol(
+            SimpleFillSymbolStyle.Cross,
+            Color(ContextCompat.getColor(context, R.color.fill_symbol_color)),
+            lineSymbol
+        )
+    }
+
 
 
     private suspend fun getSelectedFeatureLayer(featureLayer: FeatureLayer, screenCoordinate: ScreenCoordinate, maxResults: Int) {
@@ -127,12 +155,6 @@ class AGMLViewMethodCall(
                     Viewpoint(layer.item?.extent?.center!!)
                 )
             }
-
-//            if(layer.fullExtent != null) {
-//                mapView.setViewpoint(
-//                    Viewpoint(layer.fullExtent!!.center)
-//                )
-//            }
         }
     }
 
@@ -671,12 +693,96 @@ class AGMLViewMethodCall(
                         result.success("No data")
                     }
                 }
+            }
+            "/startEditing" -> {
+                val editType = Gson().fromJson(call.arguments.toString(), AGMLGeometryTypeEnum::class.java)
+                geometryEditor.start(editType.getValue())
+            }
+            "/completeEditing" -> {
+                val geometry = geometryEditor.geometry.value
+                if(geometry == null) {
+                    result.error("FAILED", "Error in /completeEditing", "Geometry is null")
+                    return
+                }
 
+                val isValid = GeometryBuilder.builder(geometry).isSketchValid
+                if(!isValid) {
+                    result.error("FAILED", "Error in /completeEditing", "Geometry is not valid")
+                    return
+                }
+
+                val geometryType = when (geometry) {
+                    is Polygon -> AGMLGeometryTypeEnum.POLYGON
+                    is Polyline -> AGMLGeometryTypeEnum.POLYLINE
+                    is Point -> AGMLGeometryTypeEnum.POINT
+                    is Multipoint -> AGMLGeometryTypeEnum.MULTIPOINT
+                    else -> null
+                }
+                val dataResult = mutableMapOf(
+                    "DATA" to geometry.toJson(),
+                    "GEOMETRY_TYPE" to geometryType.toString()
+                )
+
+                result.success(dataResult)
+                geometryEditor.stop()
+            }
+            "/cancelEditing" -> {
+                geometryEditor.stop()
+            }
+            "/addGeometry" -> {
+                val arguments = call.arguments as Map<*, *>
+                val graphic = graphicFromParams(arguments, result)
+                if(graphic == null) {
+                    result.error("FAILED", "Error in /addGeometry", "graphic is null")
+                    return
+                }
+                graphicsOverlay.graphics.add(graphic)
+            }
+            "/removeGeometry" -> {
+                val arguments = call.arguments as Map<*, *>
+                val graphic = graphicFromParams(arguments, result)
+                if(graphic == null) {
+                    result.error("FAILED", "Error in /removeGeometry", "graphic is null")
+                    return
+                }
+
+                val graphicToRemove = graphicsOverlay.graphics.find { existingGraphic ->
+                    areGraphicsEqual(existingGraphic, graphic)
+                }
+
+                graphicsOverlay.graphics.remove(graphicToRemove)
             }
             else -> result.notImplemented()
         }
     }
 
+    private fun graphicFromParams(params: Map<*, *>, result: MethodChannel.Result): Graphic? {
+        val geometryString = JSONObject(params).toString()
+        val geometry = Geometry.fromJsonOrNull(geometryString)
+
+        if(geometry == null) {
+            result.error("FAILED", "Error in /addGeometry or /removeGeometry", "Geometry is null")
+            return null
+        }
+
+        return Graphic(geometry).apply {
+            symbol = when (geometry) {
+                is Polygon -> fillSymbol
+                is Polyline -> lineSymbol
+                is Point, is Multipoint -> pointSymbol
+                else -> null
+            }
+        }
+    }
+
+    private fun areGraphicsEqual(existingGraphic: Graphic, graphic: Graphic): Boolean {
+        val existingGeometry = existingGraphic.geometry
+        val geometry = graphic.geometry
+
+        if (existingGeometry != geometry) return false
+
+        return existingGraphic.attributes == graphic.attributes
+    }
 }
 
 

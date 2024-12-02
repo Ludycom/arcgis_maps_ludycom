@@ -67,17 +67,6 @@ class _AGMLMapState extends State<AGMLMap> {
   Widget build(BuildContext context) {
 
     if(Platform.isAndroid) {
-      // return AndroidView(
-      //   viewType: _viewType,
-      //   creationParams: widget.creationParams.toMap(),
-      //   layoutDirection: TextDirection.ltr,
-      //   creationParamsCodec: const StandardMessageCodec(),
-      //   onPlatformViewCreated: (id) {
-      //     _controller = AGMLMapController(id);
-      //     initMethodChannel(id);
-      //   },
-      // );
-
       return PlatformViewLink(
         surfaceFactory: (context, controller) {
           return AndroidViewSurface(
@@ -126,7 +115,6 @@ class _AGMLMapState extends State<AGMLMap> {
     _controller.onChangedMapLocalLayersStreamController.stream.listen((event) {
       if(widget.onChangeMapLocalLayers != null) widget.onChangeMapLocalLayers!(event);
     });
-
   }
 
 }

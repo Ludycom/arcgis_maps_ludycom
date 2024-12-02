@@ -17,7 +17,8 @@ import 'package:arcgis_maps/entities/features/abstract_agml_feature_layer.dart';
 
 import 'package:arcgis_maps/entities/agml_view_point.dart';
 
-import 'package:arcgis_maps/utils/enums/agml_channel_status_response_enum.dart';
+import '../entities/geometries/geometry.dart';
+import 'enums/enums.dart';
 
 
 
@@ -414,4 +415,69 @@ class AGMLMapController {
     }
   }
 
+  void startEditing(AGMLGeometryTypeEnum editType) {
+    const method = '/startEditing';
+    try {
+      _channel.invokeMethod(method, editType.getString());
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+    }
+  }
+
+  Future<AGMLGeometryInterface> completeEditing() async {
+    const method = '/completeEditing';
+    try {
+      final result = await _channel.invokeMapMethod(method);
+      if(result == null) {
+        throw Exception('No geometry data on completeEditing');
+      }
+
+      final completeGeometry = AGMLCompleteGeometry.fromJson(result);
+
+      switch(completeGeometry.geometryType) {
+        case AGMLGeometryTypeEnum.point:
+          return AGMLPoint.fromJson(completeGeometry.data);
+        case AGMLGeometryTypeEnum.polyline:
+          return AGMLPolyline.fromJson(completeGeometry.data);
+        case AGMLGeometryTypeEnum.polygon:
+          return AGMLPolygon.fromJson(completeGeometry.data);
+        case AGMLGeometryTypeEnum.multipoint:
+          return AGMLMultipoint.fromJson(completeGeometry.data);
+        default:
+          throw Exception('Invalid geometry type: ${completeGeometry.geometryType}');
+      }
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      throw Exception(e);
+    }
+  }
+
+  void cancelEditing() {
+    const method = '/cancelEditing';
+    try {
+      _channel.invokeMethod(method);
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+    }
+  }
+
+  void addGeometry(AGMLGeometryInterface geometry) {
+    const method = '/addGeometry';
+    try {
+      _channel.invokeMethod(method, geometry.toJson());
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      throw Exception(e);
+    }
+  }
+
+  void removeGeometry(AGMLGeometryInterface geometry) {
+    const method = '/removeGeometry';
+    try {
+      _channel.invokeMethod(method, geometry.toJson());
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      throw Exception(e);
+    }
+  }
 }

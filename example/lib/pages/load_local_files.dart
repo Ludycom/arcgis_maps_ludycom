@@ -90,7 +90,8 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
                     onPressed: () {
                       mapController.loadMobileMapPackage(
                         AGMLMobileMapPackage(
-                          path: '/storage/emulated/0/Android/data/com.ludycom.arcgis_maps_example/files/Portal Items/260eb6535c824209964cf281766ebe43/SanFrancisco.mmpk',
+                          path: '/storage/emulated/0/Android/data/ com.ludycom.arcgis_maps_example/ files/Portal Items/ fc1bcb2c5e334318847d854764ef5f7c/ MAPA_BASE.mmpk',
+                          // path: '/storage/emulated/0/Android/data/com.ludycom.arcgis_maps_example/files/Portal Items/260eb6535c824209964cf281766ebe43/SanFrancisco.mmpk',
                           viewPoint: AGMLViewPoint(
                             latitude: 34.0772, 
                             longitude: -118.7989,

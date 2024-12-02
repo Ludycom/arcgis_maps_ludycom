@@ -1,15 +1,8 @@
-import 'package:arcgis_maps_example/pages/generate_geodatabase_replica_from_feature.dart';
-import 'package:arcgis_maps_example/pages/set_points.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
-
-import 'package:arcgis_maps/entities/agml_oauth_user_configurations.dart';
-import 'package:arcgis_maps/pigeons/auth/auth_pigeon.g.dart';
-import 'package:arcgis_maps/utils/agml_auth_manager.dart';
-import 'package:arcgis_maps/utils/agml_auth_manager_handler.dart';
+import 'package:arcgis_maps/arcgis_maps_ludycom.dart';
 
 import 'package:arcgis_maps_example/pages/basic_map.dart';
 import 'package:arcgis_maps_example/pages/manage_map.dart';
@@ -22,6 +15,9 @@ import 'package:arcgis_maps_example/pages/load_portal_feature_layer.dart';
 import 'package:arcgis_maps_example/pages/select_features_in_feature_layer.dart';
 import 'package:arcgis_maps_example/utils/page_routes_enum.dart';
 
+import 'package:arcgis_maps_example/pages/editor_map.dart';
+import 'package:arcgis_maps_example/pages/generate_geodatabase_replica_from_feature.dart';
+import 'package:arcgis_maps_example/pages/set_points.dart';
 
 
 Future<void> main() async {
@@ -63,7 +59,8 @@ class MyApp extends StatelessWidget {
         PageRoutesEnum.select_features_in_feature_layer.path: (context) => const SelectFeaturesInFeatureLayerPage(),
         PageRoutesEnum.manage_map.path: (context) => const ManageMapPage(),
         PageRoutesEnum.generate_geodatabase_replica_from_feature_service.path: (context) => const GenerateGeodatabaseReplicaFromFeaturePage(),
-        PageRoutesEnum.set_points.path: (context) => const SetPointsPage()
+        PageRoutesEnum.set_points.path: (context) => const SetPointsPage(),
+        PageRoutesEnum.editor_map.path: (context) => const EditorMapPage(),
       },
     );
   }
@@ -192,6 +189,13 @@ class _HomePageState extends State<_HomePage> {
                 leading: const Icon(Icons.circle_rounded),
                 title: const Text('Set points'),
                 onTap: () => Navigator.of(context).pushNamed(PageRoutesEnum.set_points.path),
+              ),
+            ),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.edit_rounded),
+                title: const Text('Editor map'),
+                onTap: () => Navigator.of(context).pushNamed(PageRoutesEnum.editor_map.path),
               ),
             ),
           ]

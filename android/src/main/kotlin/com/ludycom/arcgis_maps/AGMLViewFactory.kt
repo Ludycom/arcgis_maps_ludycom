@@ -50,6 +50,7 @@ internal class AGMLMapView(
 
     private var methodChannel: MethodChannel
     private var mapView = MapView(context)
+    private val geometryEditor = GeometryEditor()
     private var params: AGMLParams
 
     private var graphicsOverlay: GraphicsOverlay = GraphicsOverlay()
@@ -82,7 +83,8 @@ internal class AGMLMapView(
             channel,
             lifecycle,
             mapView,
-            graphicsOverlay
+            graphicsOverlay,
+            geometryEditor
         )
 
         methodChannel = MethodChannel(messenger, channel)
@@ -92,6 +94,7 @@ internal class AGMLMapView(
         ) }
 
         MethodChannel(messenger, "$channel:mapStatus").invokeMethod("/mapIsReady", "")
+        mapView.geometryEditor = geometryEditor
     }
 
 
