@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.coroutineScope
 import com.arcgismaps.Color
 import com.arcgismaps.geometry.Point
 import com.arcgismaps.mapping.ArcGISMap
@@ -16,9 +17,11 @@ import com.ludycom.arcgis_maps.entities.agml.AGMLParams
 
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.StandardMessageCodec
 import io.flutter.plugin.platform.PlatformView
 import io.flutter.plugin.platform.PlatformViewFactory
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 class AGMLViewFactory(
@@ -40,6 +43,7 @@ class AGMLViewFactory(
 }
 
 
+@Suppress("UNREACHABLE_CODE")
 internal class AGMLMapView(
     private val context: Context,
     messenger: BinaryMessenger,
@@ -52,6 +56,10 @@ internal class AGMLMapView(
     private var mapView = MapView(context)
     private val geometryEditor = GeometryEditor()
     private var params: AGMLParams
+
+    private var canUndoEventSink: EventChannel.EventSink? = null
+    private var canRedoEventSink: EventChannel.EventSink? = null
+    private var canDeleteEventSink: EventChannel.EventSink? = null
 
     private var graphicsOverlay: GraphicsOverlay = GraphicsOverlay()
 
@@ -94,7 +102,56 @@ internal class AGMLMapView(
         ) }
 
         MethodChannel(messenger, "$channel:mapStatus").invokeMethod("/mapIsReady", "")
+
         mapView.geometryEditor = geometryEditor
+
+        val canUndoChannel = EventChannel(messenger, "$channel:geometryEditor/canUndo")
+        canUndoChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                canUndoEventSink = events
+                lifecycle.coroutineScope.launch {
+                    mapView.geometryEditor!!.canUndo.collect { value ->
+                        canUndoEventSink?.success(value)
+                    }
+                }
+            }
+
+            override fun onCancel(arguments: Any?) {
+                canUndoEventSink = null
+            }
+        })
+
+        val canRedoChannel = EventChannel(messenger, "$channel:geometryEditor/canRedo")
+        canRedoChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                canRedoEventSink = events
+                lifecycle.coroutineScope.launch {
+                    mapView.geometryEditor!!.canRedo.collect { value ->
+                        canRedoEventSink?.success(value)
+                    }
+                }
+            }
+
+            override fun onCancel(arguments: Any?) {
+                canRedoEventSink = null
+            }
+        })
+
+        val canDeleteChannel = EventChannel(messenger, "$channel:geometryEditor/canDelete")
+        canDeleteChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                canDeleteEventSink = events
+                lifecycle.coroutineScope.launch {
+                    mapView.geometryEditor!!.selectedElement.collect { value ->
+                        canDeleteEventSink?.success(value != null)
+                    }
+                }
+            }
+
+            override fun onCancel(arguments: Any?) {
+                canRedoEventSink = null
+            }
+        })
     }
 
 

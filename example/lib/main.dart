@@ -92,7 +92,7 @@ class _HomePageState extends State<_HomePage> {
       appBar: AppBar(
         title: const FittedBox(
           child: Text(
-            'ArcGIS Maps by Ludycom S.A.S., Jonathan Poveda',
+            'ArcGIS Maps by Ludycom S.A.S.',
             style: TextStyle(color: Colors.white),
           )
         ),

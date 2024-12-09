@@ -25,3 +25,7 @@
 ## 0.0.10
 
 * Upgrade ArcGIS SDK Version
+
+## 0.1.0
+
+* Geometry editing functions are added, such as point, line, and polygon creation, as well as editing and deletion of these elements.

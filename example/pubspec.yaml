@@ -15,6 +15,10 @@ dependencies:
 
   arcgis_maps:
     path: ../
+#  arcgis_maps:
+#    git:
+#      url: https://github.com/Ludycom/arcgis_maps_ludycom
+#      ref: Feature/create_and_edit_geometries
 
   cupertino_icons: ^1.0.2
 

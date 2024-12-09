@@ -39,8 +39,16 @@ class AGMLMapController {
   final StreamController<List<AGMLLocalFeatureLayer>> _onChangedMapLocalLayersStreamController = StreamController();
   StreamController<List<AGMLLocalFeatureLayer>> get onChangedMapLocalLayersStreamController => _onChangedMapLocalLayersStreamController;
 
+  Stream<bool>? canUndoStream;
+  Stream<bool>? canRedoStream;
+  Stream<bool>? canDeleteStream;
+
   AGMLMapController(int id) {
     _channel = MethodChannel('plugins.flutter.io/arcgis_maps:$id');
+    final editorChannelName = 'plugins.flutter.io/arcgis_maps:$id:geometryEditor';
+    final canUndoChannel = EventChannel('$editorChannelName/canUndo');
+    final canRedoChannel = EventChannel('$editorChannelName/canRedo');
+    final canDeleteChannel = EventChannel('$editorChannelName/canDelete');
 
     _mapServiceLayers = [];
     _mapLocalLayers = [];
@@ -51,6 +59,10 @@ class AGMLMapController {
         _selectedLayerStreamController.add(selectedLayers);
       }
     });
+
+    canUndoStream = canUndoChannel.receiveBroadcastStream().map((event) => event as bool);
+    canRedoStream = canRedoChannel.receiveBroadcastStream().map((event) => event as bool);
+    canDeleteStream = canDeleteChannel.receiveBroadcastStream().map((event) => event as bool);
   }
 
 
@@ -475,6 +487,36 @@ class AGMLMapController {
     const method = '/removeGeometry';
     try {
       _channel.invokeMethod(method, geometry.toJson());
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      throw Exception(e);
+    }
+  }
+
+  void undoGeometry() {
+    const method = '/undoGeometry';
+    try {
+      _channel.invokeMethod(method);
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      throw Exception(e);
+    }
+  }
+
+  void redoGeometry() {
+    const method = '/redoGeometry';
+    try {
+      _channel.invokeMethod(method);
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      throw Exception(e);
+    }
+  }
+
+  void deleteSelectedGeometryElement() {
+    const method = '/deleteSelectedGeometryElement';
+    try {
+      _channel.invokeMethod(method);
     } on PlatformException catch (e) {
       if(kDebugMode) print(e);
       throw Exception(e);

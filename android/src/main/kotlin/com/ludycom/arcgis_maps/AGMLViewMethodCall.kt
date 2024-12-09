@@ -97,8 +97,6 @@ class AGMLViewMethodCall(
         )
     }
 
-
-
     private suspend fun getSelectedFeatureLayer(featureLayer: FeatureLayer, screenCoordinate: ScreenCoordinate, maxResults: Int) {
         featureLayer.clearSelection()
 
@@ -751,6 +749,15 @@ class AGMLViewMethodCall(
                 }
 
                 graphicsOverlay.graphics.remove(graphicToRemove)
+            }
+            "/undoGeometry" -> {
+                geometryEditor.undo()
+            }
+            "/redoGeometry" -> {
+                geometryEditor.redo()
+            }
+            "/deleteSelectedGeometryElement" -> {
+                geometryEditor.deleteSelectedElement()
             }
             else -> result.notImplemented()
         }

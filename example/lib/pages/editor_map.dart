@@ -148,6 +148,54 @@ class _EditorMapPageState extends State<EditorMapPage> {
                               }
                             : null,
                         child: const Text('Cancel', style: TextStyle(color: Colors.white)),
+                      ),
+                      if(isEditing) StreamBuilder<bool>(
+                        stream: mapController.canUndoStream,
+                        builder: (context, snapshot) {
+                          return TextButton(
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStatePropertyAll<Color>(
+                                snapshot.data == true ? Colors.blue: Colors.grey
+                              )
+                            ),
+                            onPressed: isEditing
+                                ? () => mapController.undoGeometry()
+                                : null,
+                            child: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+                          );
+                        }
+                      ),
+                      if(isEditing) StreamBuilder<bool>(
+                        stream: mapController.canRedoStream,
+                        builder: (context, snapshot) {
+                          return TextButton(
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStatePropertyAll<Color>(
+                                snapshot.data == true ? Colors.blue: Colors.grey
+                              )
+                            ),
+                            onPressed: isEditing
+                                ? () => mapController.redoGeometry()
+                                : null,
+                            child: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white),
+                          );
+                        }
+                      ),
+                      if(isEditing) StreamBuilder<bool>(
+                          stream: mapController.canDeleteStream,
+                          builder: (context, snapshot) {
+                            return TextButton(
+                              style: ButtonStyle(
+                                  backgroundColor: WidgetStatePropertyAll<Color>(
+                                      snapshot.data == true ? Colors.blue: Colors.grey
+                                  )
+                              ),
+                              onPressed: isEditing
+                                  ? () => mapController.deleteSelectedGeometryElement()
+                                  : null,
+                              child: const Icon(Icons.highlight_remove_rounded, color: Colors.white),
+                            );
+                          }
                       )
                     ],
                   ),
