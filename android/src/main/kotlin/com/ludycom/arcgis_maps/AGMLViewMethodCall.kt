@@ -697,6 +697,8 @@ class AGMLViewMethodCall(
                 geometryEditor.start(editType.getValue())
             }
             "/completeEditing" -> {
+                val spatialReferenceCode = call.arguments as Int
+
                 val geometry = geometryEditor.geometry.value
                 if(geometry == null) {
                     result.error("FAILED", "Error in /completeEditing", "Geometry is null")
@@ -716,8 +718,10 @@ class AGMLViewMethodCall(
                     is Multipoint -> AGMLGeometryTypeEnum.MULTIPOINT
                     else -> null
                 }
+
+                val projectedGeometry = GeometryEngine.projectOrNull(geometry, SpatialReference(spatialReferenceCode))
                 val dataResult = mutableMapOf(
-                    "DATA" to geometry.toJson(),
+                    "DATA" to (projectedGeometry?.toJson() ?: ""),
                     "GEOMETRY_TYPE" to geometryType.toString()
                 )
 

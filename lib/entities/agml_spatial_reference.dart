@@ -1,10 +1,10 @@
 class AGMLSpatialReference {
-  final int latestWkid;
-  final int wkid;
+  final int? latestWkid;
+  final int? wkid;
 
   AGMLSpatialReference({
-    required this.latestWkid,
-    required this.wkid,
+    this.latestWkid,
+    this.wkid,
   });
 
   factory AGMLSpatialReference.fromJson(Map<String, dynamic> json) => AGMLSpatialReference(

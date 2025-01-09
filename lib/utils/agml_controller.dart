@@ -436,10 +436,10 @@ class AGMLMapController {
     }
   }
 
-  Future<AGMLGeometryInterface> completeEditing() async {
+  Future<AGMLGeometryInterface> completeEditing({spatialReferenceCode = 4326}) async {
     const method = '/completeEditing';
     try {
-      final result = await _channel.invokeMapMethod(method);
+      final result = await _channel.invokeMapMethod(method, spatialReferenceCode);
       if(result == null) {
         throw Exception('No geometry data on completeEditing');
       }
