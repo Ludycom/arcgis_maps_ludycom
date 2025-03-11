@@ -496,17 +496,19 @@ class AGMLViewMethodCall(
 
                 lifecycle.coroutineScope.launch {
                     locationDisplay.dataSource.start().onSuccess {
-                        val position = mapView.locationDisplay.location.value!!.position;
-
-                        val location = AGMLViewPoint(
-                            longitude = position.y,
-                            latitude = position.x,
-                            scale = position.z!!
-                        )
-
-                        result.success(Gson().toJson(location))
+                        try{
+                            val position = mapView.locationDisplay.location.value!!.position;
+                            val location = AGMLViewPoint(
+                                longitude = position.x,
+                                latitude = position.y,
+                                scale = position.z!!
+                            )
+                            result.success(Gson().toJson(location))
+                        }catch(e: Exception){
+                            result.error("FAILED", "catched Error in /getLocation: $e", "locationDisplay.dataSource.start()")
+                        }
                     }.onFailure {
-                        result.error("FAILED", "Error in /getLocation", "locationDisplay.dataSource.start()")
+                        result.error("FAILED", "onFailure Error in /getLocation", "locationDisplay.dataSource.start()")
                     }
                 }
             }
@@ -518,22 +520,27 @@ class AGMLViewMethodCall(
 
                 lifecycle.coroutineScope.launch {
                     locationDisplay.dataSource.start().onSuccess {
-                        val position = mapView.locationDisplay.location.value!!.position;
+                        try{
 
-                        val point = GeometryEngine.projectOrNull(
-                            Point(position.x, position.y, SpatialReference(4326)),
-                            SpatialReference(9377)
-                        ) as Point
+                            val position = mapView.locationDisplay.location.value!!.position;
 
-                        val location = AGMLViewPoint(
-                            longitude = point.x,
-                            latitude = point.y,
-                            scale = 3000.0
-                        )
+                            val point = GeometryEngine.projectOrNull(
+                                Point(position.x, position.y, SpatialReference(4326)),
+                                SpatialReference(9377)
+                            ) as Point
 
-                        result.success(Gson().toJson(location))
+                            val location = AGMLViewPoint(
+                                longitude = point.x,
+                                latitude = point.y,
+                                scale = 3000.0
+                            )
+
+                            result.success(Gson().toJson(location))
+                        }catch(e: Exception){
+                            result.error("FAILED", "catched Error in /getLocation: $e", "locationDisplay.dataSource.start()")
+                        }
                     }.onFailure {
-                        result.error("FAILED", "Error in /getLocation", "locationDisplay.dataSource.start()")
+                        result.error("FAILED", "onFailure Error in /getLocation", "locationDisplay.dataSource.start()")
                     }
                 }
             }
