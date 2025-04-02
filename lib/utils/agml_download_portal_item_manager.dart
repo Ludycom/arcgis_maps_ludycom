@@ -115,7 +115,7 @@ class AGMLDownloadPortalItemManager {
       final geodatabase = AGMLGeodatabase.fromJson(jsonDecode(channelResponse));
       return geodatabase;
     } catch (e) {
-      if (kDebugMode) print(e);
+      if (kDebugMode) print("Error generateGeodatabaseReplicaFromFeatureService: $e");
       return null;
     }
   }

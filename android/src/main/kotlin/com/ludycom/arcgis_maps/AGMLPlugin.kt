@@ -12,6 +12,7 @@ import com.arcgismaps.mapping.PortalItem
 import com.arcgismaps.mapping.view.Graphic
 import com.arcgismaps.mapping.view.MapView
 import com.arcgismaps.mapping.view.ScreenCoordinate
+import com.arcgismaps.tasks.geodatabase.GenerateLayerOption
 import com.arcgismaps.tasks.geodatabase.GeodatabaseSyncTask
 import com.arcgismaps.tasks.geodatabase.SyncDirection
 import com.arcgismaps.tasks.geodatabase.SyncGeodatabaseParameters
@@ -142,25 +143,28 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
         val agmlFeatureService = Gson().fromJson(JSONObject(arguments).toString(), AGMLServiceFeature::class.java)
 
         val gson = Gson()
-
         val geoDatabasesSyncTask = GeodatabaseSyncTask(agmlFeatureService.url)
 
         lifecycle!!.coroutineScope.launch {
           geoDatabasesSyncTask.load().onSuccess {
-
             val defaultParameters = geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters(
               geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!
             ).getOrElse { err ->
-              result.error("LOAD_ERROR" ,"Error in geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters()", err.message)
+              result.error("LOAD_ERROR", "Error in geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters()", err.message)
               return@launch
-            }.apply {
-              layerOptions.removeIf { layerOptions ->
-                layerOptions.layerId != 0L
-              }
             }
+
+            // Mantener TODAS las capas en la descarga
+            val layerIds = geoDatabasesSyncTask.featureServiceInfo!!.layerInfos.map { it.id } // Obtiene todos los layerIds
+            defaultParameters.layerOptions.clear() // Limpia cualquier configuración previa
+            layerIds.forEach { id ->
+              id?.let { it1 -> GenerateLayerOption(it1) }
+                ?.let { it2 -> defaultParameters.layerOptions.add(it2) }
+            }
+
             defaultParameters.returnAttachments = false
 
-            val provisionFolder = File(context!!.getExternalFilesDir(null)?.absolutePath.toString()+File.separator+"Sync")
+            val provisionFolder = File(context!!.getExternalFilesDir(null)?.absolutePath.toString() + File.separator + "Sync")
             if (!provisionFolder.exists()) {
               provisionFolder.mkdirs()
             }
@@ -169,24 +173,33 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
 
             geoDatabasesSyncTask.createGenerateGeodatabaseJob(
               defaultParameters,
-              provisionFolder.path+File.separator+fileName+".geodatabase"
+              provisionFolder.path + File.separator + fileName + ".geodatabase"
             ).run {
               start()
-              val geodatabase = result().getOrElse { err ->
-                result.error("LOAD_ERROR" ,"Error in geoDatabasesSyncTask.load()", err.message)
-                return@launch
+              val geodatabase: Geodatabase? = result().getOrElse { err: Throwable ->
+                result.error("LOAD_ERROR", "Error in geoDatabasesSyncTask.load()", err.message)
+                return@getOrElse null // Retorna null en caso de error
               }
-              geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
+              if (geodatabase != null) {
+                val unregisterResult = geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
+                unregisterResult.onFailure { err: Throwable ->
+                  result.error("UNREGISTER_ERROR", "Error unregistering geodatabase", err.message)
+                }
+              } else {
+                result.error("NULL_GEODATABASE", "Geodatabase is null", null)
+              }
+              val geoDatabasePath = geodatabase?.path ?: throw IllegalStateException("Geodatabase path is null")
 
               result.success(gson.toJson(
                 AGMLGeodatabase(
-                  path = geodatabase.path,
+                  path = geoDatabasePath,
                   url = agmlFeatureService.url,
                   viewPoint = null
-              )))
+                )
+              ))
             }
           }.onFailure { err ->
-            result.error("LOAD_ERROR" ,"Error in geoDatabasesSyncTask.load()", err.message)
+            result.error("LOAD_ERROR", "Error in geoDatabasesSyncTask.load()", err.message)
           }
         }
       }
