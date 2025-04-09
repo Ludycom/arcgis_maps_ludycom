@@ -490,8 +490,8 @@ class AGMLViewMethodCall(
             }
             "/getLocation4326" -> {
                 if(!isStartedLocation) {
-                  result.error("FAILED", "Error in isStartedLocation, may be is null", "")
-                  return
+                    result.error("FAILED", "Error in isStartedLocation, may be is null", "")
+                    return
                 }
 
                 lifecycle.coroutineScope.launch {
@@ -514,8 +514,8 @@ class AGMLViewMethodCall(
             }
             "/getLocation9377" -> {
                 if(!isStartedLocation) {
-                  result.error("FAILED", "Error in isStartedLocation, may be is null", "")
-                  return
+                    result.error("FAILED", "Error in isStartedLocation, may be is null", "")
+                    return
                 }
 
                 lifecycle.coroutineScope.launch {
@@ -546,15 +546,22 @@ class AGMLViewMethodCall(
             }
             "/setPoint4326" -> {
                 val arguments = call.arguments as Map<*, *>
-                val aGMLViewPoint = Gson().fromJson(JSONObject(arguments).toString(), AGMLViewPoint::class.java)
 
-                val point = GeometryEngine.projectOrNull(
-                    Point(aGMLViewPoint.longitude, aGMLViewPoint.latitude, SpatialReference(4326)),
-                    SpatialReference(9377)
-                ) as Point
+                // Extraer valores directamente del mapa
+                val latitude = (arguments["latitude"] as? Number)?.toDouble() ?: 0.0
+                val longitude = (arguments["longitude"] as? Number)?.toDouble() ?: 0.0
+
+                // Extraer los componentes de color
+                val red = (arguments["colorR"] as? Number)?.toInt() ?: 0
+                val green = (arguments["colorG"] as? Number)?.toInt() ?: 255
+                val blue = (arguments["colorB"] as? Number)?.toInt() ?: 255
+                val alpha = (arguments["colorA"] as? Number)?.toInt() ?: 255
+
+                val point = Point(longitude, latitude, SpatialReference(4326))
 
                 try {
-                    val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.cyan, 20f)
+                    val markerColor = Color.fromRgba(red, green, blue, alpha)
+                    val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, markerColor, 20f)
                     val blueOutlineSymbol = SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.fromRgba(5, 66, 96), 3f)
                     simpleMarkerSymbol.outline = blueOutlineSymbol
 
@@ -567,12 +574,22 @@ class AGMLViewMethodCall(
             }
             "/setPoint9377" -> {
                 val arguments = call.arguments as Map<*, *>
-                val aGMLViewPoint = Gson().fromJson(JSONObject(arguments).toString(), AGMLViewPoint::class.java)
 
-                val point = Point(aGMLViewPoint.longitude, aGMLViewPoint.latitude, SpatialReference(9377))
+                // Extraer valores directamente del mapa
+                val latitude = (arguments["latitude"] as? Number)?.toDouble() ?: 0.0
+                val longitude = (arguments["longitude"] as? Number)?.toDouble() ?: 0.0
+
+                // Extraer los componentes de color
+                val red = (arguments["colorR"] as? Number)?.toInt() ?: 0
+                val green = (arguments["colorG"] as? Number)?.toInt() ?: 255
+                val blue = (arguments["colorB"] as? Number)?.toInt() ?: 255
+                val alpha = (arguments["colorA"] as? Number)?.toInt() ?: 255
+
+                val point = Point(longitude, latitude, SpatialReference(9377))
 
                 try {
-                    val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.cyan, 20f)
+                    val markerColor = Color.fromRgba(red, green, blue, alpha)
+                    val simpleMarkerSymbol = SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, markerColor, 20f)
                     val blueOutlineSymbol = SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.fromRgba(5, 66, 96), 3f)
                     simpleMarkerSymbol.outline = blueOutlineSymbol
 
@@ -585,8 +602,8 @@ class AGMLViewMethodCall(
             }
             "/getLocation9377AndSetPoint" -> {
                 if(!isStartedLocation) {
-                  result.error("FAILED", "Error in isStartedLocation, may be is null", "")
-                  return
+                    result.error("FAILED", "Error in isStartedLocation, may be is null", "")
+                    return
                 }
 
                 lifecycle.coroutineScope.launch {
@@ -642,8 +659,8 @@ class AGMLViewMethodCall(
                 }
 
                 if(!isStartedLocation) {
-                  result.error("FAILED", "Error in isStartedLocation, may be is null", "")
-                  return
+                    result.error("FAILED", "Error in isStartedLocation, may be is null", "")
+                    return
                 }
 
                 lifecycle.coroutineScope.launch {
@@ -802,5 +819,3 @@ class AGMLViewMethodCall(
         return existingGraphic.attributes == graphic.attributes
     }
 }
-
-

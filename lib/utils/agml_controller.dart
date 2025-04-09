@@ -385,9 +385,16 @@ class AGMLMapController {
     }
   }
 
-  void setPoint4326(AGMLViewPoint viewPoint) async {
+  void setPoint4326(AGMLViewPoint viewPoint, {required Color color}) async {
     const method = '/setPoint4326';
     try {
+      final Map<String, dynamic> arguments = {
+        ...viewPoint.toJson(),
+        'colorR': color.red,
+        'colorG': color.green,
+        'colorB': color.blue,
+        'colorA': color.alpha,
+      };
       _channel.invokeMethod(method, viewPoint.toJson());
     } on PlatformException catch (e) {
       if(kDebugMode) print(e);
@@ -395,10 +402,18 @@ class AGMLMapController {
     }
   }
 
-  void setPoint9377(AGMLViewPoint viewPoint) async {
+  void setPoint9377(AGMLViewPoint viewPoint, {required Color color}) async {  
     const method = '/setPoint9377';
     try {
-      _channel.invokeMethod(method, viewPoint.toJson());
+      final Map<String, dynamic> arguments = {
+        ...viewPoint.toJson(),
+        'colorR': color.red,
+        'colorG': color.green,
+        'colorB': color.blue,
+        'colorA': color.alpha,
+      };
+      //TODO: Validar el envio de parámetros, el color seleccionado no está funcionando y siempre queda cyan
+      _channel.invokeMethod(method, arguments);
     } on PlatformException catch (e) {
       if(kDebugMode) print(e);
       return null;
