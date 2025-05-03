@@ -778,6 +778,9 @@ class AGMLViewMethodCall(
 
                 graphicsOverlay.graphics.remove(graphicToRemove)
             }
+            "/removeAllGeometries" -> {
+                graphicsOverlay.graphics.clear()
+            }
             "/undoGeometry" -> {
                 geometryEditor.undo()
             }

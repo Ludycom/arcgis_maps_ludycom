@@ -508,6 +508,16 @@ class AGMLMapController {
     }
   }
 
+  void removeAllGeometries(){
+    const method = '/removeAllGeometries';
+    try {
+      _channel.invokeMethod(method);
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+      throw Exception(e);
+    }
+  }
+
   void undoGeometry() {
     const method = '/undoGeometry';
     try {
