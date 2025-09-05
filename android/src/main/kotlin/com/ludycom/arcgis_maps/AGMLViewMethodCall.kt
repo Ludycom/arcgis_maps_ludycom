@@ -12,11 +12,14 @@ import androidx.lifecycle.coroutineScope
 import com.arcgismaps.Color
 import com.arcgismaps.data.Feature
 import com.arcgismaps.data.FeatureQueryResult
+import com.arcgismaps.data.FeatureTable
 import com.arcgismaps.data.GeoPackage
 import com.arcgismaps.data.Geodatabase
 import com.arcgismaps.data.QueryParameters
 import com.arcgismaps.data.ServiceFeatureTable
 import com.arcgismaps.data.ShapefileFeatureTable
+import com.arcgismaps.data.SpatialRelationship
+import com.arcgismaps.geometry.Envelope
 import com.arcgismaps.geometry.Geometry
 import com.arcgismaps.geometry.GeometryBuilder
 import com.arcgismaps.geometry.GeometryEngine
@@ -56,6 +59,8 @@ import com.ludycom.arcgis_maps.utils.AGMLGeometryTypeEnum
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
@@ -156,9 +161,12 @@ class AGMLViewMethodCall(
         }
     }
 
-    private fun setFeatureLayer(layer: FeatureLayer, viewPoint: AGMLViewPoint?) {
-        mapView.apply {
-            map?.operationalLayers?.add(layer)
+    private fun setFeatureLayer(layer: FeatureLayer?, viewPoint: AGMLViewPoint?) {
+        val safeMapView = mapView ?: return  // si mapView es null, no hace nada
+
+        // Agregar la capa si no es nula
+        layer?.let {
+            safeMapView.map?.operationalLayers?.add(it)
 
             if (viewPoint != null) {
                 val newViewpoint = Viewpoint(
@@ -166,12 +174,11 @@ class AGMLViewMethodCall(
                     viewPoint.longitude,
                     viewPoint.scale
                 )
-                mapView.setViewpoint(newViewpoint)
+                safeMapView.setViewpoint(newViewpoint)
             } else {
-                if(layer.fullExtent != null) {
-                    mapView.setViewpoint(
-                        Viewpoint(layer.fullExtent!!.center)
-                    )
+                // Si no hay viewPoint, usar el extent de la capa (si existe)
+                it.fullExtent?.center?.let { center ->
+                    safeMapView.setViewpoint(Viewpoint(center))
                 }
             }
         }
@@ -724,17 +731,20 @@ class AGMLViewMethodCall(
                 val spatialReferenceCode = call.arguments as Int
 
                 val geometry = geometryEditor.geometry.value
-                if(geometry == null) {
-                    result.error("FAILED", "Error in /completeEditing", "Geometry is null")
+
+                if (geometry == null) {
+                    result.error("FAILED", "Error in /completeGeometry", "Geometry is null")
                     return
                 }
 
+                // Validar la geometría
                 val isValid = GeometryBuilder.builder(geometry).isSketchValid
-                if(!isValid) {
-                    result.error("FAILED", "Error in /completeEditing", "Geometry is not valid")
+                if (!isValid) {
+                    result.error("FAILED", "Error in /completeGeometry", "Geometry is not valid")
                     return
                 }
 
+                // Detectar tipo
                 val geometryType = when (geometry) {
                     is Polygon -> AGMLGeometryTypeEnum.POLYGON
                     is Polyline -> AGMLGeometryTypeEnum.POLYLINE
@@ -743,14 +753,47 @@ class AGMLViewMethodCall(
                     else -> null
                 }
 
-                val projectedGeometry = GeometryEngine.projectOrNull(geometry, SpatialReference(spatialReferenceCode))
-                val dataResult = mutableMapOf(
+                // Proyectar a la referencia solicitada
+                val projectedGeometry =
+                    GeometryEngine.projectOrNull(geometry, SpatialReference(spatialReferenceCode))
+
+                // Construir estructura base de retorno
+                val dataResult = mutableMapOf<String, Any?>(
                     "DATA" to (projectedGeometry?.toJson() ?: ""),
-                    "GEOMETRY_TYPE" to geometryType.toString()
+                    "GEOMETRY_TYPE" to geometryType.toString(),
                 )
 
-                result.success(dataResult)
-                geometryEditor.stop()
+                // Ahora buscamos features intersectados
+                val gson = Gson()
+                val allFeaturesAttrs = mutableMapOf<String, Any?>()
+
+                lifecycle.coroutineScope.launch {
+                    mapView.map?.operationalLayers
+                        ?.filterIsInstance<FeatureLayer>()
+                        ?.forEach { layer ->
+
+                            val queryParams = QueryParameters().apply {
+                                this.geometry = geometry
+                                this.spatialRelationship = SpatialRelationship.Intersects
+                            }
+
+                            val table = layer.featureTable
+                            val resultFeatures = table?.queryFeatures(queryParams)?.getOrNull()
+
+                            resultFeatures?.forEach { feature ->
+                                val attrs = mutableMapOf<String, Any?>()
+                                feature.attributes.forEach { (k, v) ->
+                                    attrs[k] = v
+                                }
+                                allFeaturesAttrs.putAll(attrs)
+                            }
+                        }
+
+                    dataResult["FEATURES_ATTRIBUTES"] = gson.toJson(allFeaturesAttrs)
+
+                    result.success(dataResult)
+                    geometryEditor.stop()
+                }
             }
             "/cancelEditing" -> {
                 geometryEditor.stop()

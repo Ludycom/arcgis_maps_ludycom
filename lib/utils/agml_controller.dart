@@ -463,13 +463,13 @@ class AGMLMapController {
 
       switch(completeGeometry.geometryType) {
         case AGMLGeometryTypeEnum.point:
-          return AGMLPoint.fromJson(completeGeometry.data);
+          return AGMLPoint.fromJson({...completeGeometry.data, 'featuresAttributes': completeGeometry.featuresAttributes});
         case AGMLGeometryTypeEnum.polyline:
-          return AGMLPolyline.fromJson(completeGeometry.data);
+          return AGMLPolyline.fromJson({...completeGeometry.data, 'featuresAttributes': completeGeometry.featuresAttributes});
         case AGMLGeometryTypeEnum.polygon:
-          return AGMLPolygon.fromJson(completeGeometry.data);
+          return AGMLPolygon.fromJson({...completeGeometry.data, 'featuresAttributes': completeGeometry.featuresAttributes});
         case AGMLGeometryTypeEnum.multipoint:
-          return AGMLMultipoint.fromJson(completeGeometry.data);
+          return AGMLMultipoint.fromJson({...completeGeometry.data, 'featuresAttributes': completeGeometry.featuresAttributes});
         default:
           throw Exception('Invalid geometry type: ${completeGeometry.geometryType}');
       }
