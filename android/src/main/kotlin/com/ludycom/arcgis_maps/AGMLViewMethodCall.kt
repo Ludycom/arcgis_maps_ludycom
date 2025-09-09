@@ -19,10 +19,13 @@ import com.arcgismaps.data.QueryParameters
 import com.arcgismaps.data.ServiceFeatureTable
 import com.arcgismaps.data.ShapefileFeatureTable
 import com.arcgismaps.data.SpatialRelationship
+import com.arcgismaps.geometry.AreaUnit
 import com.arcgismaps.geometry.Envelope
+import com.arcgismaps.geometry.GeodeticCurveType
 import com.arcgismaps.geometry.Geometry
 import com.arcgismaps.geometry.GeometryBuilder
 import com.arcgismaps.geometry.GeometryEngine
+import com.arcgismaps.geometry.LinearUnit
 import com.arcgismaps.geometry.Multipoint
 import com.arcgismaps.geometry.Point
 import com.arcgismaps.geometry.Polygon
@@ -729,7 +732,6 @@ class AGMLViewMethodCall(
             }
             "/completeEditing" -> {
                 val spatialReferenceCode = call.arguments as Int
-
                 val geometry = geometryEditor.geometry.value
 
                 if (geometry == null) {
@@ -737,14 +739,12 @@ class AGMLViewMethodCall(
                     return
                 }
 
-                // Validar la geometría
                 val isValid = GeometryBuilder.builder(geometry).isSketchValid
                 if (!isValid) {
                     result.error("FAILED", "Error in /completeGeometry", "Geometry is not valid")
                     return
                 }
 
-                // Detectar tipo
                 val geometryType = when (geometry) {
                     is Polygon -> AGMLGeometryTypeEnum.POLYGON
                     is Polyline -> AGMLGeometryTypeEnum.POLYLINE
@@ -753,18 +753,43 @@ class AGMLViewMethodCall(
                     else -> null
                 }
 
-                // Proyectar a la referencia solicitada
                 val projectedGeometry =
                     GeometryEngine.projectOrNull(geometry, SpatialReference(spatialReferenceCode))
 
-                // Construir estructura base de retorno
+                val gson = Gson()
+                val geometryData: MutableMap<String, Any?> =
+                    if (projectedGeometry != null) {
+                        gson.fromJson(projectedGeometry.toJson(), MutableMap::class.java) as MutableMap<String, Any?>
+                    } else {
+                        mutableMapOf()
+                    }
+
+                // Cálculo de métricas
+                when (geometry) {
+                    is Polyline -> {
+                        val length = GeometryEngine.lengthGeodetic(
+                            geometry,
+                            LinearUnit.meters,
+                            GeodeticCurveType.Geodesic
+                        )
+                        geometryData["LENGTH_METERS"] = length
+                    }
+                    is Polygon -> {
+                        val area = GeometryEngine.areaGeodetic(
+                            geometry,
+                            AreaUnit.squareMeters,
+                            GeodeticCurveType.Geodesic
+                        )
+                        geometryData["AREA_SQ_METERS"] = area
+                    }
+                    else -> null
+                }
+
                 val dataResult = mutableMapOf<String, Any?>(
-                    "DATA" to (projectedGeometry?.toJson() ?: ""),
+                    "DATA" to geometryData,
                     "GEOMETRY_TYPE" to geometryType.toString(),
                 )
 
-                // Ahora buscamos features intersectados
-                val gson = Gson()
                 val allFeaturesAttrs = mutableMapOf<String, Any?>()
 
                 lifecycle.coroutineScope.launch {
