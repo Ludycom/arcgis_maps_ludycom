@@ -1,6 +1,6 @@
 class AGMLSpatialReference {
-  final int? latestWkid;
-  final int? wkid;
+  final double? latestWkid;
+  final double? wkid;
 
   AGMLSpatialReference({
     this.latestWkid,

@@ -14,12 +14,15 @@ class AGMLPoint extends AGMLGeometryInterface {
     required this.featuresAttributes
   });
 
-  factory AGMLPoint.fromJson(Map<String, dynamic> json) => AGMLPoint(
-    spatialReference: AGMLSpatialReference.fromJson(json["spatialReference"]),
-    x: json["x"]?.toDouble(),
-    y: json["y"]?.toDouble(),
-    featuresAttributes: json["featuresAttributes"],
-  );
+  factory AGMLPoint.fromJson(Map<String, dynamic> json) {
+    final Map<String, dynamic> jsonSpatialReference = Map<String, dynamic>.from(json["spatialReference"]);
+    return AGMLPoint(
+      spatialReference: AGMLSpatialReference.fromJson(jsonSpatialReference),
+      x: json["x"]?.toDouble(),
+      y: json["y"]?.toDouble(),
+      featuresAttributes: json["featuresAttributes"],
+    ); 
+  }
 
   @override
   Map<String, dynamic> toJson() => {

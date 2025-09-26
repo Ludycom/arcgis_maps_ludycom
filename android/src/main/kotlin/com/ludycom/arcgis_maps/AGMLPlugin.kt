@@ -154,21 +154,18 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
               return@launch
             }
 
-            // Mantener TODAS las capas en la descarga
-            val layerIds = geoDatabasesSyncTask.featureServiceInfo!!.layerInfos.map { it.id } // Obtiene todos los layerIds
-            defaultParameters.layerOptions.clear() // Limpia cualquier configuración previa
+            // Configuración de capas
+            val layerIds = geoDatabasesSyncTask.featureServiceInfo!!.layerInfos.map { it.id }
+            defaultParameters.layerOptions.clear()
             layerIds.forEach { id ->
-              id?.let { it1 -> GenerateLayerOption(it1) }
-                ?.let { it2 -> defaultParameters.layerOptions.add(it2) }
+              id?.let { defaultParameters.layerOptions.add(GenerateLayerOption(it)) }
             }
-
             defaultParameters.returnAttachments = false
 
             val provisionFolder = File(context!!.getExternalFilesDir(null)?.absolutePath.toString() + File.separator + "Sync")
             if (!provisionFolder.exists()) {
               provisionFolder.mkdirs()
             }
-
             val fileName = UUID.randomUUID().toString()
 
             geoDatabasesSyncTask.createGenerateGeodatabaseJob(
@@ -177,18 +174,22 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             ).run {
               start()
               val geodatabase: Geodatabase? = result().getOrElse { err: Throwable ->
-                result.error("LOAD_ERROR", "Error in geoDatabasesSyncTask.load()", err.message)
-                return@getOrElse null // Retorna null en caso de error
+                result.error("LOAD_ERROR", "Error in geoDatabasesSyncTask.load()", err.message as String?)
+                return@run
               }
-              if (geodatabase != null) {
-                val unregisterResult = geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
-                unregisterResult.onFailure { err: Throwable ->
-                  result.error("UNREGISTER_ERROR", "Error unregistering geodatabase", err.message)
-                }
-              } else {
+
+              if (geodatabase == null) {
                 result.error("NULL_GEODATABASE", "Geodatabase is null", null)
+                return@run
               }
-              val geoDatabasePath = geodatabase?.path ?: throw IllegalStateException("Geodatabase path is null")
+
+              val unregisterResult = geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
+              unregisterResult.onFailure { err: Throwable ->
+                result.error("UNREGISTER_ERROR", "Error unregistering geodatabase", err.message as String?)
+                return@onFailure
+              }
+
+              val geoDatabasePath = geodatabase.path
 
               result.success(gson.toJson(
                 AGMLGeodatabase(
@@ -200,6 +201,7 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
             }
           }.onFailure { err ->
             result.error("LOAD_ERROR", "Error in geoDatabasesSyncTask.load()", err.message)
+            return@launch
           }
         }
       }

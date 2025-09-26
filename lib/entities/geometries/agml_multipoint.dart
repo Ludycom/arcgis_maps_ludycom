@@ -12,11 +12,14 @@ class AGMLMultipoint extends AGMLGeometryInterface {
     required this.featuresAttributes,
   });
 
-  factory AGMLMultipoint.fromJson(Map<String, dynamic> json) => AGMLMultipoint(
-    points: List<List<double>>.from(json["points"].map((x) => List<double>.from(x.map((x) => x?.toDouble())))),
-    spatialReference: AGMLSpatialReference.fromJson(json["spatialReference"]),
-    featuresAttributes: json["featuresAttributes"],
-  );
+  factory AGMLMultipoint.fromJson(Map<String, dynamic> json) {
+    final Map<String, dynamic> jsonSpatialReference = Map<String, dynamic>.from(json["spatialReference"]);
+    return AGMLMultipoint(
+      points: List<List<double>>.from(json["points"].map((x) => List<double>.from(x.map((x) => x?.toDouble())))),
+      spatialReference: AGMLSpatialReference.fromJson(jsonSpatialReference),
+      featuresAttributes: json["featuresAttributes"],
+    );
+  }
 
   @override
   Map<String, dynamic> toJson() => {
