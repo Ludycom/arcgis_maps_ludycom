@@ -97,7 +97,7 @@ class AGMLDownloadPortalItemManager {
       final channelResponse = await _channel.invokeMethod(method, portalItem.toJson()) as String;
       downloadPortalItem = AGMLDownloadPortalItem.fromJson(jsonDecode(channelResponse));
     } catch (e) {
-      if (kDebugMode) print(e);
+      if (kDebugMode) print("Error downloading portalItem: $e");
       downloadPortalItem = AGMLDownloadPortalItem(
         portalItem: portalItem,
         downloadStatus: AGMLDownloadPortalItemStatusEnum.failure

@@ -1,6 +1,7 @@
 package com.ludycom.arcgis_maps
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.coroutineScope
 import com.arcgismaps.data.Geodatabase
@@ -17,6 +18,7 @@ import com.arcgismaps.tasks.geodatabase.GeodatabaseSyncTask
 import com.arcgismaps.tasks.geodatabase.SyncDirection
 import com.arcgismaps.tasks.geodatabase.SyncGeodatabaseParameters
 import com.arcgismaps.tasks.geodatabase.SyncLayerOption
+import com.arcgismaps.tasks.geodatabase.SyncModel
 import com.google.gson.Gson
 import com.ludycom.arcgis_maps.entities.agml.AGMLChangeSpacialReferenceParams
 import com.ludycom.arcgis_maps.entities.agml.AGMLDownloadPortalItem
@@ -82,14 +84,18 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   override fun onMethodCall(call: MethodCall, result: Result) {
     when(call.method) {
       "/downloadPortalItem" -> {
-        val arguments = call.arguments as Map<*, *>
-        val arcGISMapServicePortalItem = Gson().fromJson(JSONObject(arguments).toString(), AGMLPortalItem::class.java)
+        try {
+          val arguments = call.arguments as Map<*, *>
+          val arcGISMapServicePortalItem = Gson().fromJson(JSONObject(arguments).toString(), AGMLPortalItem::class.java)
 
-        val aGMLDownloadFromPortal = AGMLDownloadFromPortal(context!!)
+          val aGMLDownloadFromPortal = AGMLDownloadFromPortal(context!!)
 
-        lifecycle!!.coroutineScope.launch {
-          val downloadResponse = aGMLDownloadFromPortal.downloadPortalItem(arcGISMapServicePortalItem)
-          result.success(Gson().toJson(downloadResponse))
+          lifecycle!!.coroutineScope.launch {
+            val downloadResponse = aGMLDownloadFromPortal.downloadPortalItem(arcGISMapServicePortalItem)
+            result.success(Gson().toJson(downloadResponse))
+          }
+        } catch (err: Exception) {
+          result.error("LOAD_ERROR", "Error in downloadPortalItem", err.message)
         }
       }
       "/checkDownloadedPortalItems" -> {
@@ -140,69 +146,263 @@ class AGMLPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
       }
       "/generateGeodatabaseReplicaFromFeatureService" -> {
         val arguments = call.arguments as Map<*, *>
-        val agmlFeatureService = Gson().fromJson(JSONObject(arguments).toString(), AGMLServiceFeature::class.java)
+        val agmlFeatureService = Gson().fromJson(
+          JSONObject(arguments).toString(),
+          AGMLServiceFeature::class.java
+        )
 
         val gson = Gson()
+        val contextRef = context ?: run {
+          result.error("CONTEXT_ERROR", "Context is null", null)
+          return@onMethodCall
+        }
+
+        val provisionFolder = File(contextRef.getExternalFilesDir(null), "Sync").apply {
+          if (!exists()) mkdirs()
+        }
+
         val geoDatabasesSyncTask = GeodatabaseSyncTask(agmlFeatureService.url)
 
-        lifecycle!!.coroutineScope.launch {
+        lifecycle?.coroutineScope?.launch {
           geoDatabasesSyncTask.load().onSuccess {
-            val defaultParameters = geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters(
-              geoDatabasesSyncTask.featureServiceInfo!!.fullExtent!!
-            ).getOrElse { err ->
-              result.error("LOAD_ERROR", "Error in geoDatabasesSyncTask.createDefaultGenerateGeodatabaseParameters()", err.message)
+            val serviceInfo = geoDatabasesSyncTask.featureServiceInfo ?: run {
+              result.error("SERVICE_INFO_ERROR", "FeatureServiceInfo is null", null)
               return@launch
             }
 
-            // Configuración de capas
-            val layerIds = geoDatabasesSyncTask.featureServiceInfo!!.layerInfos.map { it.id }
-            defaultParameters.layerOptions.clear()
-            layerIds.forEach { id ->
-              id?.let { defaultParameters.layerOptions.add(GenerateLayerOption(it)) }
+            // ===== DIAGNÓSTICO COMPLETO DEL SERVICIO =====
+            Log.d("ServiceDiag", "==========================================")
+            Log.d("ServiceDiag", "URL: ${agmlFeatureService.url}")
+            Log.d("ServiceDiag", "Description: ${serviceInfo.serviceDescription}")
+
+            // ✅ Validar capacidades usando serviceCapabilities
+            val capabilities = serviceInfo.featureServiceCapabilities
+            Log.d("ServiceDiag", "=== FEATURE SERVICE CAPABILITIES ===")
+            Log.d("ServiceDiag", "Supports Sync: ${capabilities?.supportsSync}")
+            Log.d("ServiceDiag", "Supports Query: ${capabilities?.supportsQuery}")
+            Log.d("ServiceDiag", "Supports Create: ${capabilities?.supportsCreate}")
+            Log.d("ServiceDiag", "Supports Update: ${capabilities?.supportsUpdate}")
+            Log.d("ServiceDiag", "Supports Delete: ${capabilities?.supportsDelete}")
+            Log.d("ServiceDiag", "Supports Editing: ${capabilities?.supportsEditing}")
+
+            // Verificar si soporta sincronización
+            if (capabilities?.supportsSync != true) {
+              result.error(
+                "SYNC_NOT_SUPPORTED",
+                "El servicio no tiene habilitada la sincronización. Capabilities: $capabilities",
+                null
+              )
+              return@launch
             }
+
+            // ===== SYNC CAPABILITIES DETALLADAS =====
+            val syncCaps = serviceInfo.syncCapabilities
+            Log.d("ServiceDiag", "=== SYNC CAPABILITIES ===")
+            Log.d("ServiceDiag", "supportsSyncModelLayer Sync: ${syncCaps?.supportsSyncModelLayer}")
+            Log.d("ServiceDiag", "Async: ${syncCaps?.supportsAsync}")
+            Log.d("ServiceDiag", "Attachments Sync Direction: ${syncCaps?.supportsAttachmentsSyncDirection}")
+            Log.d("ServiceDiag", "Sync Direction Control: ${syncCaps?.supportsSyncDirectionControl}")
+            Log.d("ServiceDiag", "Register Existing Data: ${syncCaps?.supportsRegisteringExistingData}")
+
+            val fullExtent = serviceInfo.fullExtent ?: run {
+              result.error("EXTENT_ERROR", "Full extent is null", null)
+              return@launch
+            }
+
+            // ✅ Validar y diagnosticar extent
+            Log.d("ServiceDiag", "=== EXTENT ===")
+            Log.d("ServiceDiag", "xMin: ${fullExtent.xMin}, yMin: ${fullExtent.yMin}")
+            Log.d("ServiceDiag", "xMax: ${fullExtent.xMax}, yMax: ${fullExtent.yMax}")
+            Log.d("ServiceDiag", "Width: ${fullExtent.width}, Height: ${fullExtent.height}")
+            Log.d("ServiceDiag", "Spatial Reference WKID: ${fullExtent.spatialReference?.wkid}")
+            Log.d("ServiceDiag", "Spatial Reference WKText: ${fullExtent.spatialReference?.wkText}")
+            Log.d("ServiceDiag", "Is Empty: ${fullExtent.isEmpty}")
+
+            if (fullExtent.isEmpty) {
+              result.error("INVALID_EXTENT", "Extent está vacío", null)
+              return@launch
+            }
+
+            // Validar valores del extent
+            if (fullExtent.xMin.isNaN() || fullExtent.xMin.isInfinite() ||
+              fullExtent.yMin.isNaN() || fullExtent.yMin.isInfinite() ||
+              fullExtent.xMax.isNaN() || fullExtent.xMax.isInfinite() ||
+              fullExtent.yMax.isNaN() || fullExtent.yMax.isInfinite()) {
+              result.error("INVALID_EXTENT", "Extent contiene valores inválidos (NaN o Infinito)", null)
+              return@launch
+            }
+
+            // ===== INFORMACIÓN DE CAPAS =====
+            Log.d("ServiceDiag", "=== LAYERS (Total: ${serviceInfo.layerInfos.size}) ===")
+            serviceInfo.layerInfos.forEach { layerInfo ->
+              Log.d("LayerDiag", "Layer ID: ${layerInfo.id}")
+              Log.d("LayerDiag", "  Name: ${layerInfo.name}")
+            }
+            Log.d("ServiceDiag", "==========================================")
+
+            val defaultParameters = geoDatabasesSyncTask
+              .createDefaultGenerateGeodatabaseParameters(fullExtent)
+              .getOrElse { err ->
+                Log.e("ParamsError", "Error creando parámetros: ${err.message}", err)
+                result.error("PARAMS_ERROR", "Error creando parámetros: ${err.message}", err.message)
+                return@launch
+              }
+
+            // ===== DIAGNÓSTICO DE PARÁMETROS POR DEFECTO =====
+            Log.d("ParamsDiag", "=== PARÁMETROS INICIALES (POR DEFECTO) ===")
+            Log.d("ParamsDiag", "Layer Options Count: ${defaultParameters.layerOptions.size}")
+            defaultParameters.layerOptions.forEach { option ->
+              Log.d("ParamsDiag", "  Layer ID en options: ${option.layerId}")
+            }
+            Log.d("ParamsDiag", "Sync Model: ${defaultParameters.syncModel}")
+            Log.d("ParamsDiag", "Return Attachments: ${defaultParameters.returnAttachments}")
+            Log.d("ParamsDiag", "Out Spatial Reference: ${defaultParameters.outSpatialReference?.wkid}")
+
+            // ✅ Configurar capas
+            defaultParameters.layerOptions.clear()
+
+            val validLayers = serviceInfo.layerInfos.mapNotNull { it }
+
+            if (validLayers.isEmpty()) {
+              result.error("NO_VALID_LAYERS", "No hay capas válidas para sincronizar", null)
+              return@launch
+            }
+
+            Log.d("ParamsDiag", "=== CONFIGURANDO CAPAS ===")
+            validLayers.forEach { layer ->
+              Log.d("ParamsDiag", "Agregando Layer ID: ${layer.id}, Name: ${layer.name}")
+              defaultParameters.layerOptions.add(GenerateLayerOption(layer.id!!))
+            }
+
+            // Configuración
             defaultParameters.returnAttachments = false
 
-            val provisionFolder = File(context!!.getExternalFilesDir(null)?.absolutePath.toString() + File.separator + "Sync")
-            if (!provisionFolder.exists()) {
-              provisionFolder.mkdirs()
-            }
+            // ✅ Especificar spatial reference de salida
+            defaultParameters.outSpatialReference = fullExtent.spatialReference
+
+            // ===== DIAGNÓSTICO DE PARÁMETROS FINALES =====
+            Log.d("ParamsDiag", "=== PARÁMETROS FINALES ===")
+            Log.d("ParamsDiag", "Layer Options Count: ${defaultParameters.layerOptions.size}")
+            Log.d("ParamsDiag", "Sync Model: ${defaultParameters.syncModel}")
+            Log.d("ParamsDiag", "Return Attachments: ${defaultParameters.returnAttachments}")
+            Log.d("ParamsDiag", "Out Spatial Reference: ${defaultParameters.outSpatialReference?.wkid}")
+
             val fileName = UUID.randomUUID().toString()
+            val geodatabasePath = File(provisionFolder, "$fileName.geodatabase").path
 
-            geoDatabasesSyncTask.createGenerateGeodatabaseJob(
+            Log.d("JobDiag", "=== CREANDO JOB ===")
+            Log.d("JobDiag", "Ruta geodatabase: $geodatabasePath")
+            Log.d("JobDiag", "Nombre archivo: $fileName")
+
+            val job = geoDatabasesSyncTask.createGenerateGeodatabaseJob(
               defaultParameters,
-              provisionFolder.path + File.separator + fileName + ".geodatabase"
-            ).run {
-              start()
-              val geodatabase: Geodatabase? = result().getOrElse { err: Throwable ->
-                result.error("LOAD_ERROR", "Error in geoDatabasesSyncTask.load()", err.message as String?)
-                return@run
+              geodatabasePath
+            )
+
+            // ✅ Colector de mensajes en paralelo
+            launch {
+              try {
+                job.messages.collect { message ->
+                  Log.d("JobMessage", "[${message.severity}] ${message.message}")
+                }
+              } catch (e: Exception) {
+                Log.e("JobMessage", "Error colectando mensajes: ${e.message}", e)
               }
-
-              if (geodatabase == null) {
-                result.error("NULL_GEODATABASE", "Geodatabase is null", null)
-                return@run
-              }
-
-              val unregisterResult = geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
-              unregisterResult.onFailure { err: Throwable ->
-                result.error("UNREGISTER_ERROR", "Error unregistering geodatabase", err.message as String?)
-                return@onFailure
-              }
-
-              val geoDatabasePath = geodatabase.path
-
-              result.success(gson.toJson(
-                AGMLGeodatabase(
-                  path = geoDatabasePath,
-                  url = agmlFeatureService.url,
-                  viewPoint = null
-                )
-              ))
             }
+
+            // ✅ Colector de progreso en paralelo
+            launch {
+              try {
+                job.progress.collect { progress ->
+                  Log.d("JobProgress", "Progreso: $progress%")
+                }
+              } catch (e: Exception) {
+                Log.e("JobProgress", "Error colectando progreso: ${e.message}", e)
+              }
+            }
+
+            // ✅ Colector de estado en paralelo
+            launch {
+              try {
+                job.status.collect { status ->
+                  Log.d("JobStatus", "Estado del job: $status")
+                }
+              } catch (e: Exception) {
+                Log.e("JobStatus", "Error colectando estado: ${e.message}", e)
+              }
+            }
+
+            Log.d("JobDiag", "Iniciando job...")
+            job.start()
+            Log.d("JobDiag", "Job iniciado, esperando resultado...")
+
+            val geodatabase = job.result().getOrElse { err ->
+              Log.e("JobError", "==========================================")
+              Log.e("JobError", "===== ERROR EN LA GENERACIÓN =====")
+              Log.e("JobError", "Tipo de excepción: ${err::class.simpleName}")
+              Log.e("JobError", "Mensaje: ${err.message}")
+              Log.e("JobError", "Causa: ${err.cause}")
+              Log.e("JobError", "Causa mensaje: ${err.cause?.message}")
+              Log.e("JobError", "Stack trace:", err)
+
+              // Si es ServiceException, mostrar más detalles
+              if (err is com.arcgismaps.exceptions.ServiceException) {
+                Log.e("JobError", "ServiceException detectada")
+                Log.e("JobError", "Detalles del error de servicio: ${err.message}")
+              }
+
+              Log.e("JobError", "==========================================")
+
+              result.error(
+                "GENERATION_ERROR",
+                "Error generando geodatabase: ${err.message}",
+                err.cause?.message
+              )
+              return@launch
+            }
+
+            Log.d("JobDiag", "==========================================")
+            Log.d("JobDiag", "===== GENERACIÓN EXITOSA =====")
+            Log.d("JobDiag", "Ruta: ${geodatabase.path}")
+            Log.d("JobDiag", "Feature Tables: ${geodatabase.featureTables.size}")
+            geodatabase.featureTables.forEach { table ->
+              Log.d("JobDiag", "  Table: ${table.tableName}, Features: ${table.numberOfFeatures}")
+            }
+            Log.d("JobDiag", "==========================================")
+
+            geoDatabasesSyncTask.unregisterGeodatabase(geodatabase)
+              .onSuccess {
+                Log.d("Unregister", "Geodatabase desregistrada exitosamente")
+              }
+              .onFailure { err ->
+                Log.w("Unregister", "No se pudo desregistrar: ${err.message}")
+              }
+
+            val response = AGMLGeodatabase(
+              path = geodatabase.path,
+              url = agmlFeatureService.url,
+              viewPoint = null
+            )
+
+            result.success(gson.toJson(response))
+
           }.onFailure { err ->
-            result.error("LOAD_ERROR", "Error in geoDatabasesSyncTask.load()", err.message)
-            return@launch
+            Log.e("LoadError", "==========================================")
+            Log.e("LoadError", "===== ERROR CARGANDO SERVICIO =====")
+            Log.e("LoadError", "Tipo: ${err::class.simpleName}")
+            Log.e("LoadError", "Mensaje: ${err.message}")
+            Log.e("LoadError", "Causa: ${err.cause?.message}")
+            Log.e("LoadError", "Stack trace:", err)
+            Log.e("LoadError", "==========================================")
+
+            result.error(
+              "LOAD_ERROR",
+              "Error cargando servicio: ${err.message}",
+              err.cause?.message
+            )
           }
+        } ?: run {
+          result.error("LIFECYCLE_ERROR", "Lifecycle is null", null)
         }
       }
       "/syncGeodatabaseReplicaToFeatureService" -> {
