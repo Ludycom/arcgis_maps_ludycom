@@ -433,11 +433,12 @@ class AGMLMapController {
   Future<Map<String, dynamic>> queryData(String queryString) async {
     const method = '/queryData';
     try {
-      final response = await _channel.invokeMethod(method, queryString);
-      final data = json.decode(response);
-      return data;
+      final Map<dynamic, dynamic>? response =
+          await _channel.invokeMethod(method, queryString);
+
+      return response?.cast<String, dynamic>() ?? {};
     } on PlatformException catch (e) {
-      if(kDebugMode) print(e);
+      if (kDebugMode) print(e);
       return {};
     }
   }

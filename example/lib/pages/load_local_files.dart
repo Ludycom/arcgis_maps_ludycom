@@ -185,11 +185,11 @@ class _LoadLocalFilesPageState extends State<LoadLocalFilesPage> {
                   ),
                   TextButton(
                     style: const ButtonStyle(
-                      backgroundColor: MaterialStatePropertyAll<Color>(Colors.blue)
+                      backgroundColor: WidgetStatePropertyAll<Color>(Colors.blue)
                     ),
                     child: const Icon(Icons.circle, color: Colors.white),
                     onPressed: () async {
-                      mapController.setPoint4326(AGMLViewPoint(latitude: 3.417680, longitude: -76.614931));
+                      mapController.setPoint4326(AGMLViewPoint(latitude: 3.417680, longitude: -76.614931), color: Colors.red);
                       mapController.setViewPoint4326(AGMLViewPoint(latitude: 3.417680, longitude: -76.614931));
                     },
                   ),

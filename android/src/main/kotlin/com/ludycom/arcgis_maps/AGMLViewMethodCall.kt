@@ -698,31 +698,59 @@ class AGMLViewMethodCall(
             "/queryData" -> {
                 val queryString = call.arguments as String
 
-                val mapLayers = mapView.map?.operationalLayers;
-                if(mapLayers.isNullOrEmpty()) return result.error("FAILED", "Error in /queryData", "operationalLayers is empty");
+                val mapLayers = mapView.map?.operationalLayers
+                if (mapLayers.isNullOrEmpty()) {
+                    result.error("FAILED", "operationalLayers is empty", null)
+                    return
+                }
 
-                val featureLayer = mapLayers.last() as FeatureLayer
+                val featureLayer = mapLayers.last() as? FeatureLayer
+                if (featureLayer == null) {
+                    result.error("FAILED", "Last layer is not FeatureLayer", null)
+                    return
+                }
 
-                featureLayer.clearSelection()
+                val featureTable = featureLayer.featureTable
+                if (featureTable == null) {
+                    result.error("FAILED", "FeatureTable is null", null)
+                    return
+                }
+
                 val queryParameters = QueryParameters().apply {
                     whereClause = queryString
+                    maxFeatures = 1
                 }
 
                 lifecycle.coroutineScope.launch {
-                    val featureQueryResult = featureLayer.featureTable?.queryFeatures(queryParameters)?.getOrElse {
-                        result.error("FAILED", "Error in /queryData", "featureLayer.featureTable?.queryFeatures(queryParameters).getOrElse")
-                    } as FeatureQueryResult?
+                    try {
+                        featureLayer.clearSelection()
 
-                    val feature = featureQueryResult?.firstOrNull()
-                    if (feature != null) {
-                        featureLayer.selectFeature(feature)
-                        val envelope = feature.geometry?.extent
-                            ?: return@launch result.error("FAILED", "Error in /queryData", "Error retrieving geometry extent")
+                        // 🔥 AQUÍ ESTÁ LA CLAVE
+                        val resultQuery: Result<FeatureQueryResult> =
+                            featureTable.queryFeatures(queryParameters)
 
-                        mapView.setViewpoint(Viewpoint(envelope))
-                        result.success(Gson().toJson(feature.attributes))
-                    } else {
-                        result.success("No data")
+                        if (resultQuery.isFailure) {
+                            result.error("FAILED", "Query failed", null)
+                            return@launch
+                        }
+
+                        val featureQueryResult = resultQuery.getOrNull()
+                        val feature = featureQueryResult?.firstOrNull()
+
+                        if (feature != null) {
+                            featureLayer.selectFeature(feature)
+
+                            feature.geometry?.extent?.let {
+                                mapView.setViewpoint(Viewpoint(it))
+                            }
+
+                            result.success(feature.attributes)
+                        } else {
+                            result.success(emptyMap<String, Any>())
+                        }
+
+                    } catch (e: Exception) {
+                        result.error("QUERY_ERROR", e.message, null)
                     }
                 }
             }
