@@ -20,15 +20,17 @@ class AGMLMap extends StatefulWidget {
   final AGMLCreationParams creationParams;
   final Function(AGMLMapController controller)? onMapCreated;
   final Function(List<dynamic> attributesList)? onLayerSelected;
+  final Function(Map<String, dynamic> attributes)? onGraphicSelected;
   final Function(List<AGMLFeatureServiceLayer> layers)? onChangeMapServiceLayers;
   final Function(List<AGMLLocalFeatureLayer> layers)? onChangeMapLocalLayers;
 
   const AGMLMap({
-    super.key, 
-    required this.creationParams, 
-    this.onMapCreated, 
-    this.onLayerSelected, 
-    this.onChangeMapServiceLayers, 
+    super.key,
+    required this.creationParams,
+    this.onMapCreated,
+    this.onLayerSelected,
+    this.onGraphicSelected,
+    this.onChangeMapServiceLayers,
     this.onChangeMapLocalLayers
   });
 
@@ -106,6 +108,10 @@ class _AGMLMapState extends State<AGMLMap> {
     
     _controller.selectedLayerStreamController.stream.listen((event) {
       if(widget.onLayerSelected != null) widget.onLayerSelected!(event);
+    });
+
+    _controller.selectedGraphicStreamController.stream.listen((event) {
+      if(widget.onGraphicSelected != null) widget.onGraphicSelected!(event);
     });
 
     _controller.onChangedMapServiceLayersStreamController.stream.listen((event) {

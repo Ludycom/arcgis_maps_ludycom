@@ -36,6 +36,15 @@ class AuthPigeonImpl(private val context: Context?) : AuthPigeon.AGMLAuthApi {
     }
 
     override fun setApiKey(apiKey: String) {
-        ArcGISEnvironment.apiKey = ApiKey.create(apiKey)
+        val tag = "AGMLAuthApi.setApiKey"
+        Log.d(tag, "Received API key (length=${apiKey.length}): ${apiKey.take(8)}...")
+        val createdKey = ApiKey.create(apiKey)
+        ArcGISEnvironment.apiKey = createdKey
+        val stored = ArcGISEnvironment.apiKey
+        if (stored != null) {
+            Log.d(tag, "API key stored successfully. Stored: ${stored.toString().take(20)}...")
+        } else {
+            Log.e(tag, "API key was NOT stored — ArcGISEnvironment.apiKey is null after assignment")
+        }
     }
 }

@@ -19,7 +19,7 @@ class AGMLPolygon extends AGMLGeometryInterface {
     return AGMLPolygon(
       rings: List<List<List<double>>>.from(json["rings"].map((x) => List<List<double>>.from(x.map((x) => List<double>.from(x.map((x) => x?.toDouble())))))),
       spatialReference: AGMLSpatialReference.fromJson(jsonSpatialReference),
-      areaSqMeters: json["AREA_SQ_METERS"],
+      areaSqMeters: (json["AREA_SQ_METERS"] as num?)?.toDouble(),
       featuresAttributes: json["featuresAttributes"],
     );
   }

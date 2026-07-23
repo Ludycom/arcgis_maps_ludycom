@@ -42,6 +42,7 @@ import com.arcgismaps.mapping.symbology.SimpleLineSymbol
 import com.arcgismaps.mapping.symbology.SimpleLineSymbolStyle
 import com.arcgismaps.mapping.symbology.SimpleMarkerSymbol
 import com.arcgismaps.mapping.symbology.SimpleMarkerSymbolStyle
+import com.arcgismaps.mapping.symbology.Symbol
 import com.arcgismaps.mapping.view.Graphic
 import com.arcgismaps.mapping.view.GraphicsOverlay
 import com.arcgismaps.mapping.view.MapView
@@ -65,6 +66,7 @@ import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
@@ -104,9 +106,108 @@ class AGMLViewMethodCall(
             lineSymbol
         )
     }
+    // Símbolo resaltado para el gráfico seleccionado (amarillo-ámbar, más grueso)
+    private val lineSymbolSelected: SimpleLineSymbol by lazy {
+        SimpleLineSymbol(SimpleLineSymbolStyle.Solid, Color.fromRgba(229, 57, 53, 255), 6f)
+    }
+    private val pointSymbolSelected: SimpleMarkerSymbol by lazy {
+        SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, Color.fromRgba(229, 57, 53, 255), 24f)
+    }
+
+    private var activeFeatureLayer: FeatureLayer? = null
+    private var activeFeatureLayerMaxResults: Int = 1
+    private var tapListenerJob: Job? = null
+
+    init {
+        startGlobalTapListener()
+    }
+
+    // Color activo para nuevas geometrías (naranja por defecto)
+    private var drawColorR: Int = 0xFE
+    private var drawColorG: Int = 0x87
+    private var drawColorB: Int = 0x00
+    private var drawColorA: Int = 0xFF
+
+    private fun currentLineSymbol() = SimpleLineSymbol(
+        SimpleLineSymbolStyle.Solid,
+        Color.fromRgba(drawColorR, drawColorG, drawColorB, drawColorA),
+        4f
+    )
+    private fun currentPointSymbol() = SimpleMarkerSymbol(
+        SimpleMarkerSymbolStyle.Circle,
+        Color.fromRgba(drawColorR, drawColorG, drawColorB, drawColorA),
+        20f
+    )
+    private fun currentFillSymbol() = SimpleFillSymbol(
+        SimpleFillSymbolStyle.Cross,
+        Color.fromRgba(drawColorR, drawColorG, drawColorB, (drawColorA * 0.43).toInt()),
+        currentLineSymbol()
+    )
+
+    private fun normalSymbolFor(graphic: Graphic): Symbol? {
+        // Recuperar el color almacenado en los atributos del gráfico si existe
+        val attrs = graphic.attributes
+        val r = (attrs["_colorR"] as? Number)?.toInt()
+        val g = (attrs["_colorG"] as? Number)?.toInt()
+        val b = (attrs["_colorB"] as? Number)?.toInt()
+        val a = (attrs["_colorA"] as? Number)?.toInt() ?: 0xFF
+        return if (r != null && g != null && b != null) {
+            val c = Color.fromRgba(r, g, b, a)
+            when (graphic.geometry) {
+                is Polygon -> SimpleFillSymbol(SimpleFillSymbolStyle.Cross, Color.fromRgba(r, g, b, (a * 0.43).toInt()), SimpleLineSymbol(SimpleLineSymbolStyle.Solid, c, 4f))
+                is Polyline -> SimpleLineSymbol(SimpleLineSymbolStyle.Solid, c, 4f)
+                is Point, is Multipoint -> SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, c, 20f)
+                else -> null
+            }
+        } else {
+            when (graphic.geometry) {
+                is Polygon -> fillSymbol
+                is Polyline -> lineSymbol
+                is Point, is Multipoint -> pointSymbol
+                else -> null
+            }
+        }
+    }
+
+    private fun resetAllGraphicSymbols() {
+        graphicsOverlay.graphics.forEach { it.symbol = normalSymbolFor(it) }
+    }
+
+    private fun highlightGraphic(graphic: Graphic) {
+        resetAllGraphicSymbols()
+        graphic.symbol = when (graphic.geometry) {
+            is Polyline -> lineSymbolSelected
+            is Point, is Multipoint -> pointSymbolSelected
+            else -> normalSymbolFor(graphic)
+        }
+    }
+
+    private suspend fun identifyGraphicsOnTap(screenCoordinate: ScreenCoordinate): Boolean {
+        val identifyResult = mapView.identifyGraphicsOverlay(graphicsOverlay, screenCoordinate, 22.0, false)
+        var graphicFound = false
+        identifyResult.onSuccess { result ->
+            Log.d("identifyGraphicsOnTap", "Graphics found: ${result.graphics.size}")
+            if (result.graphics.isNotEmpty()) {
+                val graphic = result.graphics.first()
+                activeFeatureLayer?.clearSelection()
+                highlightGraphic(graphic)
+                val gson = Gson()
+                val attributeMap = mutableMapOf<String, Any?>()
+                graphic.attributes.keys.forEach { key -> attributeMap[key] = graphic.attributes[key] }
+                methodChannel.invokeMethod("/getSelectedGraphic", gson.toJson(attributeMap))
+                graphicFound = true
+            }
+        }
+        identifyResult.onFailure {
+            Log.e("identifyGraphicsOnTap", "identifyGraphicsOverlay failed: ${it.message}")
+        }
+        return graphicFound
+    }
 
     private suspend fun getSelectedFeatureLayer(featureLayer: FeatureLayer, screenCoordinate: ScreenCoordinate, maxResults: Int) {
         featureLayer.clearSelection()
+        // Quitar el resaltado de cualquier gráfico dibujado previamente seleccionado
+        resetAllGraphicSymbols()
 
         val tolerance = 25.0
         val identifyLayerResult = mapView.identifyLayer(featureLayer, screenCoordinate, tolerance, false, maxResults).onFailure {
@@ -128,6 +229,10 @@ class AGMLViewMethodCall(
                     attributeMap[key] = attributes[key]
                 }
 
+                // Adjunta la geometría del feature (como JSON string) para permitir
+                // editarla/clonarla desde Flutter (caso "modificado").
+                feature.geometry?.let { attributeMap["_geometryJson"] = it.toJson() }
+
                 val json = gson.toJson(attributeMap)
 
                 jsonSelectedLayers.add(json)
@@ -146,42 +251,54 @@ class AGMLViewMethodCall(
         return tapEvent.screenCoordinate
     }
 
-    private fun setOnSingleTapConfirmedListener(layer: FeatureLayer, maxResults: Int) {
-        mapView.apply {
-            lifecycle.coroutineScope.launch {
-                onSingleTapConfirmed.flatMapConcat { tapEvent -> flow {
-                    emit(getTapEventCoordinate(tapEvent))
-                }}.collect { coordinate ->
-                    getSelectedFeatureLayer(layer, coordinate, maxResults)
+    private fun startGlobalTapListener() {
+        tapListenerJob?.cancel()
+        tapListenerJob = lifecycle.coroutineScope.launch {
+            mapView.onSingleTapConfirmed.flatMapConcat { tapEvent -> flow {
+                emit(getTapEventCoordinate(tapEvent))
+            }}.collect { coordinate ->
+                Log.d("tapListener", "Tap at $coordinate — graphics: ${graphicsOverlay.graphics.size}")
+                val graphicSelected = identifyGraphicsOnTap(coordinate)
+                if (!graphicSelected) {
+                    val layer = activeFeatureLayer
+                    if (layer != null) {
+                        getSelectedFeatureLayer(layer, coordinate, activeFeatureLayerMaxResults)
+                    }
                 }
-            }
-
-            if(layer.item?.extent?.center != null) {
-                setViewpoint(
-                    Viewpoint(layer.item?.extent?.center!!)
-                )
             }
         }
     }
 
-    private fun setFeatureLayer(layer: FeatureLayer?, viewPoint: AGMLViewPoint?) {
-        val safeMapView = mapView ?: return  // si mapView es null, no hace nada
+    private fun setOnSingleTapConfirmedListener(layer: FeatureLayer, maxResults: Int) {
+        activeFeatureLayer = layer
+        activeFeatureLayerMaxResults = maxResults
+        if (layer.item?.extent?.center != null) {
+            mapView.setViewpoint(Viewpoint(layer.item?.extent?.center!!))
+        }
+    }
 
-        // Agregar la capa si no es nula
+    private suspend fun setFeatureLayer(layer: FeatureLayer?, viewPoint: AGMLViewPoint?) {
+        val map = try {
+            mapView.map
+        } catch (e: Exception) {
+            Log.e("setFeatureLayer", "mapView.map not ready: ${e.message}")
+            return
+        } ?: return
+
+        // Esperar a que el mapa esté cargado antes de añadir capas
+        map.load().onFailure {
+            Log.e("setFeatureLayer", "map.load() failed: ${it.message}")
+            return
+        }
+
         layer?.let {
-            safeMapView.map?.operationalLayers?.add(it)
+            map.operationalLayers.add(it)
 
             if (viewPoint != null) {
-                val newViewpoint = Viewpoint(
-                    viewPoint.latitude,
-                    viewPoint.longitude,
-                    viewPoint.scale
-                )
-                safeMapView.setViewpoint(newViewpoint)
+                mapView.setViewpoint(Viewpoint(viewPoint.latitude, viewPoint.longitude, viewPoint.scale))
             } else {
-                // Si no hay viewPoint, usar el extent de la capa (si existe)
                 it.fullExtent?.center?.let { center ->
-                    safeMapView.setViewpoint(Viewpoint(center))
+                    mapView.setViewpoint(Viewpoint(center))
                 }
             }
         }
@@ -755,8 +872,40 @@ class AGMLViewMethodCall(
                 }
             }
             "/startEditing" -> {
-                val editType = Gson().fromJson(call.arguments.toString(), AGMLGeometryTypeEnum::class.java)
+                val args = call.arguments
+                val editTypeStr: String
+                if (args is Map<*, *>) {
+                    editTypeStr = args["editType"]?.toString() ?: "POLYLINE"
+                    drawColorR = (args["colorR"] as? Number)?.toInt() ?: 0xFE
+                    drawColorG = (args["colorG"] as? Number)?.toInt() ?: 0x87
+                    drawColorB = (args["colorB"] as? Number)?.toInt() ?: 0x00
+                    drawColorA = (args["colorA"] as? Number)?.toInt() ?: 0xFF
+                } else {
+                    editTypeStr = args.toString()
+                    drawColorR = 0xFE; drawColorG = 0x87; drawColorB = 0x00; drawColorA = 0xFF
+                }
+                val editType = Gson().fromJson("\"$editTypeStr\"", AGMLGeometryTypeEnum::class.java)
                 geometryEditor.start(editType.getValue())
+            }
+            "/startEditingWithGeometry" -> {
+                val arguments = call.arguments as Map<*, *>
+                drawColorR = (arguments["colorR"] as? Number)?.toInt() ?: 0x19
+                drawColorG = (arguments["colorG"] as? Number)?.toInt() ?: 0x76
+                drawColorB = (arguments["colorB"] as? Number)?.toInt() ?: 0xD2
+                drawColorA = (arguments["colorA"] as? Number)?.toInt() ?: 0xFF
+
+                // Reconstruye la geometría a editar (mismo formato que /addGeometry).
+                val geometryParams = arguments.toMutableMap().apply {
+                    remove("colorR"); remove("colorG"); remove("colorB"); remove("colorA")
+                }
+                val geometryString = JSONObject(geometryParams as Map<*, *>).toString()
+                val geometry = Geometry.fromJsonOrNull(geometryString)
+
+                if (geometry == null) {
+                    Log.e("startEditingWithGeometry", "Geometry is null")
+                } else {
+                    geometryEditor.start(geometry)
+                }
             }
             "/completeEditing" -> {
                 val spatialReferenceCode = call.arguments as Int
@@ -853,11 +1002,13 @@ class AGMLViewMethodCall(
             }
             "/addGeometry" -> {
                 val arguments = call.arguments as Map<*, *>
+                val graphicAttributes = arguments["_graphicAttributes"] as? Map<*, *>
                 val graphic = graphicFromParams(arguments, result)
                 if(graphic == null) {
                     result.error("FAILED", "Error in /addGeometry", "graphic is null")
                     return
                 }
+                graphicAttributes?.forEach { (k, v) -> graphic.attributes[k.toString()] = v }
                 graphicsOverlay.graphics.add(graphic)
             }
             "/removeGeometry" -> {
@@ -877,6 +1028,68 @@ class AGMLViewMethodCall(
             "/removeAllGeometries" -> {
                 graphicsOverlay.graphics.clear()
             }
+            "/hideFeaturesByCodes" -> {
+                // Oculta persistentemente los features cuyo campo identificador esté en
+                // la lista de códigos (canales "modified" cuya geometría se clonó/editó),
+                // mediante un definitionExpression. Lista vacía → muestra todos.
+                val arguments = call.arguments as? Map<*, *>
+                val codes = (arguments?.get("codes") as? List<*>)?.mapNotNull { it?.toString() } ?: emptyList()
+                val field = arguments?.get("field")?.toString() ?: "DIDENTIF"
+                val layer = activeFeatureLayer
+                if (layer != null) {
+                    layer.definitionExpression = if (codes.isEmpty()) {
+                        ""
+                    } else {
+                        val inList = codes.joinToString(",") { "'${it.replace("'", "''")}'" }
+                        "$field NOT IN ($inList)"
+                    }
+                    layer.clearSelection()
+                }
+            }
+            "/selectGraphicByCode" -> {
+                // Selecciona (resalta) el gráfico cuyo atributo cadastralCode coincide,
+                // deselecciona los demás y centra/encaja la vista en su geometría.
+                val code = call.arguments?.toString()
+                val graphic = graphicsOverlay.graphics.firstOrNull {
+                    it.attributes["cadastralCode"]?.toString() == code
+                }
+                if (graphic != null) {
+                    activeFeatureLayer?.clearSelection()
+                    highlightGraphic(graphic)
+                    graphic.geometry?.let { geom ->
+                        lifecycle.coroutineScope.launch {
+                            mapView.setViewpointGeometry(geom, 60.0)
+                        }
+                    }
+                }
+            }
+            "/selectFeatureByCode" -> {
+                // Selecciona (resalta) en la capa el feature cuyo campo identificador
+                // coincide, deselecciona lo anterior y centra la vista en su geometría.
+                val arguments = call.arguments as? Map<*, *>
+                val code = arguments?.get("code")?.toString()
+                val field = arguments?.get("field")?.toString() ?: "DIDENTIF"
+                val layer = activeFeatureLayer
+                val featureTable = layer?.featureTable
+                if (layer != null && featureTable != null && code != null) {
+                    val queryParameters = QueryParameters().apply {
+                        whereClause = "$field = '${code.replace("'", "''")}'"
+                        maxFeatures = 1
+                    }
+                    lifecycle.coroutineScope.launch {
+                        layer.clearSelection()
+                        resetAllGraphicSymbols()
+                        val feature = featureTable.queryFeatures(queryParameters)
+                            .getOrNull()?.firstOrNull()
+                        if (feature != null) {
+                            layer.selectFeature(feature)
+                            feature.geometry?.let { geom ->
+                                mapView.setViewpointGeometry(geom, 60.0)
+                            }
+                        }
+                    }
+                }
+            }
             "/undoGeometry" -> {
                 geometryEditor.undo()
             }
@@ -891,7 +1104,9 @@ class AGMLViewMethodCall(
     }
 
     private fun graphicFromParams(params: Map<*, *>, result: MethodChannel.Result): Graphic? {
-        val geometryString = JSONObject(params).toString()
+        val graphicAttributes = params["_graphicAttributes"] as? Map<*, *>
+        val geometryParams = params.toMutableMap().apply { remove("_graphicAttributes") }
+        val geometryString = JSONObject(geometryParams as Map<*, *>).toString()
         val geometry = Geometry.fromJsonOrNull(geometryString)
 
         if(geometry == null) {
@@ -900,21 +1115,28 @@ class AGMLViewMethodCall(
         }
 
         return Graphic(geometry).apply {
+            attributes["_colorR"] = drawColorR
+            attributes["_colorG"] = drawColorG
+            attributes["_colorB"] = drawColorB
+            attributes["_colorA"] = drawColorA
+            // Los atributos pasados pueden sobreescribir _colorR/G/B/A
+            graphicAttributes?.forEach { (k, v) -> attributes[k.toString()] = v }
+            // Construir símbolo desde el color final en atributos
+            val r = (attributes["_colorR"] as? Number)?.toInt() ?: drawColorR
+            val g = (attributes["_colorG"] as? Number)?.toInt() ?: drawColorG
+            val b = (attributes["_colorB"] as? Number)?.toInt() ?: drawColorB
+            val a = (attributes["_colorA"] as? Number)?.toInt() ?: drawColorA
+            val c = Color.fromRgba(r, g, b, a)
             symbol = when (geometry) {
-                is Polygon -> fillSymbol
-                is Polyline -> lineSymbol
-                is Point, is Multipoint -> pointSymbol
+                is Polygon -> SimpleFillSymbol(SimpleFillSymbolStyle.Cross, Color.fromRgba(r, g, b, (a * 0.43).toInt()), SimpleLineSymbol(SimpleLineSymbolStyle.Solid, c, 4f))
+                is Polyline -> SimpleLineSymbol(SimpleLineSymbolStyle.Solid, c, 4f)
+                is Point, is Multipoint -> SimpleMarkerSymbol(SimpleMarkerSymbolStyle.Circle, c, 20f)
                 else -> null
             }
         }
     }
 
     private fun areGraphicsEqual(existingGraphic: Graphic, graphic: Graphic): Boolean {
-        val existingGeometry = existingGraphic.geometry
-        val geometry = graphic.geometry
-
-        if (existingGeometry != geometry) return false
-
-        return existingGraphic.attributes == graphic.attributes
+        return existingGraphic.geometry == graphic.geometry
     }
 }

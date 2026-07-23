@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:arcgis_maps/entities/agml_color.dart';
 import 'package:arcgis_maps/entities/agml_geodatabase.dart';
 import 'package:arcgis_maps/entities/agml_mobile_map_package.dart';
 import 'package:arcgis_maps/entities/agml_selected_layer_arguments.dart';
@@ -29,6 +30,9 @@ class AGMLMapController {
   final StreamController<List<dynamic>> _selectedLayerStreamController = StreamController();
   StreamController<List<dynamic>> get selectedLayerStreamController => _selectedLayerStreamController;
 
+  final StreamController<Map<String, dynamic>> _selectedGraphicStreamController = StreamController.broadcast();
+  StreamController<Map<String, dynamic>> get selectedGraphicStreamController => _selectedGraphicStreamController;
+
   late List<AGMLFeatureServiceLayer> _mapServiceLayers;
   List<AGMLFeatureServiceLayer> get mapServiceLayers => _mapServiceLayers;
   final StreamController<List<AGMLFeatureServiceLayer>> _onChangedMapServiceLayersStreamController = StreamController();
@@ -57,6 +61,9 @@ class AGMLMapController {
       if (call.method == '/getSelectedFeatureInFeatureLayer') {
         final selectedLayers = call.arguments as List<dynamic>;
         _selectedLayerStreamController.add(selectedLayers);
+      } else if (call.method == '/getSelectedGraphic') {
+        final attributes = jsonDecode(call.arguments as String) as Map<String, dynamic>;
+        _selectedGraphicStreamController.add(attributes);
       }
     });
 
@@ -443,10 +450,37 @@ class AGMLMapController {
     }
   }
 
-  void startEditing(AGMLGeometryTypeEnum editType) {
+  void startEditing(AGMLGeometryTypeEnum editType, {AGMLColor? color}) {
     const method = '/startEditing';
     try {
-      _channel.invokeMethod(method, editType.getString());
+      final payload = <String, dynamic>{
+        'editType': editType.getString(),
+        ...?color?.toMap(),
+      };
+      _channel.invokeMethod(method, payload);
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+    }
+  }
+
+  /// Inicia la edición cargando una geometría existente en el editor, de forma
+  /// que el usuario pueda ajustar sus vértices (en vez de dibujar desde cero).
+  void startEditingWithGeometry(AGMLGeometryInterface geometry, {AGMLColor? color}) {
+    startEditingWithRawGeometry(geometry.toJson(), color: color);
+  }
+
+  /// Igual que [startEditingWithGeometry] pero recibe el JSON de la geometría
+  /// tal cual (formato ArcGIS). Útil cuando la geometría proviene del nativo
+  /// (p. ej. un feature del mapa) y no conviene reconstruirla en Dart, para
+  /// evitar incompatibilidades de tipos (p. ej. `wkid` entero vs double).
+  void startEditingWithRawGeometry(Map<String, dynamic> geometryJson, {AGMLColor? color}) {
+    const method = '/startEditingWithGeometry';
+    try {
+      final payload = Map<String, dynamic>.from(geometryJson);
+      if (color != null) {
+        payload.addAll(color.toMap());
+      }
+      _channel.invokeMethod(method, payload);
     } on PlatformException catch (e) {
       if(kDebugMode) print(e);
     }
@@ -489,10 +523,14 @@ class AGMLMapController {
     }
   }
 
-  void addGeometry(AGMLGeometryInterface geometry) {
+  void addGeometry(AGMLGeometryInterface geometry, {Map<String, dynamic>? attributes}) {
     const method = '/addGeometry';
     try {
-      _channel.invokeMethod(method, geometry.toJson());
+      final payload = Map<String, dynamic>.from(geometry.toJson());
+      if (attributes != null) {
+        payload['_graphicAttributes'] = attributes;
+      }
+      _channel.invokeMethod(method, payload);
     } on PlatformException catch (e) {
       if(kDebugMode) print(e);
       throw Exception(e);
@@ -516,6 +554,42 @@ class AGMLMapController {
     } on PlatformException catch (e) {
       if(kDebugMode) print(e);
       throw Exception(e);
+    }
+  }
+
+  /// Selecciona (resalta) el gráfico cuyo atributo `cadastralCode` coincide con
+  /// [code], deselecciona los demás y centra/encaja la vista del mapa en su
+  /// geometría. No hace nada si no existe un gráfico con ese código.
+  void selectGraphicByCode(String code) {
+    const method = '/selectGraphicByCode';
+    try {
+      _channel.invokeMethod(method, code);
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+    }
+  }
+
+  /// Selecciona (resalta) en la capa activa el feature cuyo campo [field] es
+  /// igual a [code], deselecciona lo anterior y centra/encaja la vista en su
+  /// geometría. Para canales existentes del mapa (que no tienen gráfico propio).
+  void selectFeatureByCode(String code, {String field = 'DIDENTIF'}) {
+    const method = '/selectFeatureByCode';
+    try {
+      _channel.invokeMethod(method, {'code': code, 'field': field});
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
+    }
+  }
+
+  /// Oculta de forma persistente (definitionExpression) los features de la capa
+  /// activa cuyo campo [field] esté en [codes]. Útil para ocultar los canales
+  /// cuya geometría se clonó/editó. Lista vacía → muestra todos los features.
+  void hideFeaturesByCodes(List<String> codes, {String field = 'DIDENTIF'}) {
+    const method = '/hideFeaturesByCodes';
+    try {
+      _channel.invokeMethod(method, {'codes': codes, 'field': field});
+    } on PlatformException catch (e) {
+      if(kDebugMode) print(e);
     }
   }
 

@@ -19,7 +19,7 @@ class AGMLPolyline extends AGMLGeometryInterface {
     return AGMLPolyline(
     paths: List<List<List<double>>>.from(json["paths"].map((x) => List<List<double>>.from(x.map((x) => List<double>.from(x.map((x) => x?.toDouble())))))),
     spatialReference: AGMLSpatialReference.fromJson(jsonSpatialReference),
-    lengthMeters: json["LENGTH_METERS"],
+    lengthMeters: (json["LENGTH_METERS"] as num?)?.toDouble(),
     featuresAttributes: json["featuresAttributes"],
   );
   }

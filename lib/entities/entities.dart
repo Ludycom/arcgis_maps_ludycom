@@ -1,3 +1,4 @@
+export 'agml_color.dart';
 export 'agml_download_portal_item.dart';
 export 'agml_geodatabase.dart';
 export 'agml_mobile_map_package.dart';
