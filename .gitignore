@@ -1,5 +1,8 @@
 # Generated files
 *.g.dart
+# Excepto los generados por Pigeon: son un paso manual (no build_runner) y su
+# ausencia rompe la compilación, así que se versionan.
+!lib/pigeons/**/*.g.dart
 
 # Miscellaneous
 *.class
